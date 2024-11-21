@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>{{ "Éditer le Client" if is_edit else "Créer un Client" }}</title>
+    <!-- Lien vers Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h2 class="text-center">{{ "Éditer le Client" if is_edit else "Créer un Nouveau Client" }}</h2>
+        <form method="POST" action="{{ url_for('edit_client_route', client_id=client['_id']) if is_edit else url_for('create_client_route') }}" class="mt-4">
+            <!-- Informations Générales -->
+            <div class="mb-4">
+                <h4>Informations Générales</h4>
+                <div class="mb-3">
+                    <label for="companyName" class="form-label">Nom de l'entreprise</label>
+                    <input type="text" id="companyName" name="companyName" class="form-control" value="{{ client.companyName if is_edit else '' }}" required>
+                </div>
+                <div class="mb-3">
+                    <label for="lastName" class="form-label">Nom du Responsable</label>
+                    <input type="text" id="lastName" name="lastName" class="form-control" value="{{ client.responsible.lastName if is_edit else '' }}" required>
+                </div>
+                <div class="mb-3">
+                    <label for="firstName" class="form-label">Prénom du Responsable</label>
+                    <input type="text" id="firstName" name="firstName" class="form-control" value="{{ client.responsible.firstName if is_edit else '' }}" required>
+                </div>
+            </div>
+
+            <!-- Coordonnées -->
+            <div class="mb-4">
+                <h4>Coordonnées</h4>
+                <div class="mb-3">
+                    <label for="email" class="form-label">Adresse e-mail</label>
+                    <input type="email" id="email" name="email" class="form-control" value="{{ client.email if is_edit else '' }}" required>
+                </div>
+                <div class="mb-3">
+                    <label for="phone" class="form-label">Téléphone fixe</label>
+                    <input type="tel" id="phone" name="phone" class="form-control" value="{{ client.phone if is_edit else '' }}">
+                </div>
+                <div class="mb-3">
+                    <label for="gsm" class="form-label">Numéro de GSM</label>
+                    <input type="tel" id="gsm" name="gsm" class="form-control" value="{{ client.gsm if is_edit else '' }}">
+                </div>
+                <div class="mb-3">
+                    <label for="vatNumber" class="form-label">Numéro de TVA</label>
+                    <input type="text" id="vatNumber" name="vatNumber" class="form-control" value="{{ client.vatNumber if is_edit else '' }}">
+                </div>
+            </div>
+
+            <!-- Adresse de Facturation -->
+            <div class="mb-4">
+                <h4>Adresse de Facturation</h4>
+                <div class="mb-3">
+                    <label for="billingAddress" class="form-label">Adresse</label>
+                    <input type="text" id="billingAddress" name="billingAddress[address]" class="form-control" value="{{ client.billingAddress.address if is_edit else '' }}" required>
+                </div>
+                <div class="mb-3">
+                    <label for="billingPostalCode" class="form-label">Code Postal</label>
+                    <input type="text" id="billingPostalCode" name="billingAddress[postalCode]" class="form-control" value="{{ client.billingAddress.postalCode if is_edit else '' }}" required>
+                </div>
+                <div class="mb-3">
+                    <label for="billingCity" class="form-label">Localité</label>
+                    <input type="text" id="billingCity" name="billingAddress[city]" class="form-control" value="{{ client.billingAddress.city if is_edit else '' }}" required>
+                </div>
+                <div class="mb-3">
+                    <label for="billingCountry" class="form-label">Pays</label>
+                    <input type="text" id="billingCountry" name="billingAddress[country]" class="form-control" value="{{ client.billingAddress.country if is_edit else '' }}" required>
+                </div>
+            </div>
+
+            <!-- Adresse de Prestation -->
+            <div class="mb-4">
+                <h4>Adresse de Prestation</h4>
+                <div class="mb-3">
+                    <label for="serviceAddress" class="form-label">Adresse</label>
+                    <input type="text" id="serviceAddress" name="serviceAddress[address]" class="form-control" value="{{ client.serviceAddress.address if is_edit else '' }}">
+                </div>
+                <div class="mb-3">
+                    <label for="servicePostalCode" class="form-label">Code Postal</label>
+                    <input type="text" id="servicePostalCode" name="serviceAddress[postalCode]" class="form-control" value="{{ client.serviceAddress.postalCode if is_edit else '' }}">
+                </div>
+                <div class="mb-3">
+                    <label for="serviceCity" class="form-label">Localité</label>
+                    <input type="text" id="serviceCity" name="serviceAddress[city]" class="form-control" value="{{ client.serviceAddress.city if is_edit else '' }}">
+                </div>
+                <div class="mb-3">
+                    <label for="serviceCountry" class="form-label">Pays</label>
+                    <input type="text" id="serviceCountry" name="serviceAddress[country]" class="form-control" value="{{ client.serviceAddress.country if is_edit else '' }}">
+                </div>
+            </div>
+
+            <!-- Notes -->
+            <div class="mb-4">
+                <h4>Notes</h4>
+                <textarea name="notes" class="form-control" rows="3">{{ client.notes if is_edit else '' }}</textarea>
+            </div>
+
+            <!-- Boutons d'Action -->
+            <div class="d-flex justify-content-between">
+                <button type="submit" class="btn btn-primary">{{ "Mettre à jour" if is_edit else "Créer" }}</button>
+                <a href="?load=client_list" class="btn btn-secondary">Annuler</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Lien vers Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

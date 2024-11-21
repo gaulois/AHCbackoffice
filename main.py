@@ -1,9 +1,13 @@
 import os
+
+from bson import ObjectId
 from dotenv import load_dotenv
 from pymongo import MongoClient
 from flask import Flask, render_template, request, redirect, url_for
 from initialize_project import login_user, create_initial_admin_user, verify_login
 import bcrypt
+from datetime import datetime
+from controllers.client_management import create_client, edit_client
 from controllers.user_management import create_user
 
 # Charger les variables d'environnement
@@ -99,7 +103,6 @@ def create_user_route():
     return render_template("create_user.html")
 
 
-
 @app.route("/user_list")
 def user_list():
     # Récupère tous les utilisateurs sans le mot de passe
@@ -139,15 +142,33 @@ def delete_user(username):
     return "Utilisateur supprimé", 200
 
 
-@app.route("/create_client")
-def create_client():
-    return "Créer un client - à implémenter"
+@app.route("/create_client", methods=["GET", "POST"])
+def create_client_route():
+    return create_client(db)  # Passe la base de données en argument
 
 
 @app.route("/client_list")
 def client_list():
-    # Logic to display the client list
-    return "Liste des clients - à implémenter"
+    clients = db.clients.find({}, {"companyName": 1, "responsible": 1,
+                                   "email": 1})  # Ne récupérer que les champs nécessaires
+    return render_template("client_list.html", clients=clients)
+
+
+@app.route("/edit_client/<client_id>", methods=["GET", "POST"])
+def edit_client_route(client_id):
+    return edit_client(db, client_id)
+
+
+@app.route("/delete_client/<client_id>", methods=["POST"])
+def delete_client(client_id):
+    try:
+        result = db.clients.delete_one({"_id": ObjectId(client_id)})
+        if result.deleted_count == 1:
+            return "Client supprimé", 200
+        else:
+            return "Client non trouvé", 404
+    except Exception as e:
+        return str(e), 500
 
 
 if __name__ == "__main__":
