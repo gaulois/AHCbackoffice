@@ -171,5 +171,9 @@ def delete_client(client_id):
         return str(e), 500
 
 
+@app.route("/delete_client/<client_id>", methods=["POST"])
+def delete_client_route(client_id):
+    return delete_client(db, client_id)
+
 if __name__ == "__main__":
     app.run(debug=True)

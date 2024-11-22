@@ -61,25 +61,25 @@
     <!-- Script -->
     <script>
         // Fonction générique pour confirmer et supprimer
-        function confirmDelete(url, reloadUrl) {
-            if (confirm("Êtes-vous sûr de vouloir supprimer cet élément ? Cette action est irréversible.")) {
-                fetch(url, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    }
-                })
-                .then(response => {
-                    if (response.ok) {
-                        alert("Élément supprimé avec succès.");
-                        loadContent(reloadUrl); // Recharge le contenu correspondant
-                    } else {
-                        alert("Erreur lors de la suppression.");
-                    }
-                })
-                .catch(error => console.error("Erreur :", error));
-            }
+        function confirmDelete(url) {
+        if (confirm("Êtes-vous sûr de vouloir supprimer ce client ? Cette action est irréversible.")) {
+            fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert("Client supprimé avec succès.");
+                    loadContent('/client_list'); // Recharge la liste des clients
+                } else {
+                    alert("Erreur lors de la suppression du client.");
+                }
+            })
+            .catch(error => console.error("Erreur :", error));
         }
+    }
 
         // Fonction pour charger du contenu dynamiquement
         function loadContent(url) {
@@ -115,5 +115,6 @@
             loadContent('{{ url_for('create_client_route') }}');
         }
     </script>
+
 </body>
 </html>

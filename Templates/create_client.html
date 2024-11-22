@@ -10,95 +10,110 @@
 <body>
     <div class="container mt-5">
         <h2 class="text-center">{{ "Éditer le Client" if is_edit else "Créer un Nouveau Client" }}</h2>
-        <form method="POST" action="{{ url_for('edit_client_route', client_id=client['_id']) if is_edit else url_for('create_client_route') }}" class="mt-4">
-            <!-- Informations Générales -->
-            <div class="mb-4">
-                <h4>Informations Générales</h4>
-                <div class="mb-3">
-                    <label for="companyName" class="form-label">Nom de l'entreprise</label>
-                    <input type="text" id="companyName" name="companyName" class="form-control" value="{{ client.companyName if is_edit else '' }}" required>
-                </div>
-                <div class="mb-3">
-                    <label for="lastName" class="form-label">Nom du Responsable</label>
-                    <input type="text" id="lastName" name="lastName" class="form-control" value="{{ client.responsible.lastName if is_edit else '' }}" required>
-                </div>
-                <div class="mb-3">
-                    <label for="firstName" class="form-label">Prénom du Responsable</label>
-                    <input type="text" id="firstName" name="firstName" class="form-control" value="{{ client.responsible.firstName if is_edit else '' }}" required>
-                </div>
-            </div>
+        <form method="POST" action="{{ url_for('edit_client_route', client_id=client['_id']) if is_edit else url_for('create_client_route') }}" class="mt-4" class="was-validated">
+            <!-- Onglets -->
+            <ul class="nav nav-tabs" id="clientTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="general-tab" data-bs-toggle="tab" data-bs-target="#general" type="button" role="tab" aria-controls="general" aria-selected="true">
+                        Informations Générales
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="addresses-tab" data-bs-toggle="tab" data-bs-target="#addresses" type="button" role="tab" aria-controls="addresses" aria-selected="false">
+                        Adresses
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="notes-tab" data-bs-toggle="tab" data-bs-target="#notes" type="button" role="tab" aria-controls="notes" aria-selected="false">
+                        Notes
+                    </button>
+                </li>
+            </ul>
 
-            <!-- Coordonnées -->
-            <div class="mb-4">
-                <h4>Coordonnées</h4>
-                <div class="mb-3">
-                    <label for="email" class="form-label">Adresse e-mail</label>
-                    <input type="email" id="email" name="email" class="form-control" value="{{ client.email if is_edit else '' }}" required>
+            <!-- Contenu des Onglets -->
+            <div class="tab-content mt-4" id="clientTabsContent">
+                <!-- Onglet Informations Générales -->
+                <div class="tab-pane fade show active" id="general" role="tabpanel" aria-labelledby="general-tab">
+                    <div class="mb-3">
+                        <label for="companyName" class="form-label">Nom de l'entreprise</label>
+                        <input type="text" id="companyName" name="companyName" class="form-control" value="{{ client.companyName if is_edit else '' }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="lastName" class="form-label">Nom du Responsable</label>
+                        <input type="text" id="lastName" name="lastName" class="form-control" value="{{ client.responsible.lastName if is_edit else '' }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="firstName" class="form-label">Prénom du Responsable</label>
+                        <input type="text" id="firstName" name="firstName" class="form-control" value="{{ client.responsible.firstName if is_edit else '' }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Adresse e-mail</label>
+                        <input type="email" id="email" name="email" class="form-control" value="{{ client.email if is_edit else '' }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="phone" class="form-label">Téléphone fixe</label>
+                        <input type="tel" id="phone" name="phone" class="form-control" value="{{ client.phone if is_edit else '' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="gsm" class="form-label">Numéro de GSM</label>
+                        <input type="tel" id="gsm" name="gsm" class="form-control" value="{{ client.gsm if is_edit else '' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="vatNumber" class="form-label">Numéro de TVA</label>
+                        <input type="text" id="vatNumber" name="vatNumber" class="form-control" value="{{ client.vatNumber if is_edit else '' }}">
+                    </div>
                 </div>
-                <div class="mb-3">
-                    <label for="phone" class="form-label">Téléphone fixe</label>
-                    <input type="tel" id="phone" name="phone" class="form-control" value="{{ client.phone if is_edit else '' }}">
-                </div>
-                <div class="mb-3">
-                    <label for="gsm" class="form-label">Numéro de GSM</label>
-                    <input type="tel" id="gsm" name="gsm" class="form-control" value="{{ client.gsm if is_edit else '' }}">
-                </div>
-                <div class="mb-3">
-                    <label for="vatNumber" class="form-label">Numéro de TVA</label>
-                    <input type="text" id="vatNumber" name="vatNumber" class="form-control" value="{{ client.vatNumber if is_edit else '' }}">
-                </div>
-            </div>
 
-            <!-- Adresse de Facturation -->
-            <div class="mb-4">
-                <h4>Adresse de Facturation</h4>
-                <div class="mb-3">
-                    <label for="billingAddress" class="form-label">Adresse</label>
-                    <input type="text" id="billingAddress" name="billingAddress[address]" class="form-control" value="{{ client.billingAddress.address if is_edit else '' }}" required>
-                </div>
-                <div class="mb-3">
-                    <label for="billingPostalCode" class="form-label">Code Postal</label>
-                    <input type="text" id="billingPostalCode" name="billingAddress[postalCode]" class="form-control" value="{{ client.billingAddress.postalCode if is_edit else '' }}" required>
-                </div>
-                <div class="mb-3">
-                    <label for="billingCity" class="form-label">Localité</label>
-                    <input type="text" id="billingCity" name="billingAddress[city]" class="form-control" value="{{ client.billingAddress.city if is_edit else '' }}" required>
-                </div>
-                <div class="mb-3">
-                    <label for="billingCountry" class="form-label">Pays</label>
-                    <input type="text" id="billingCountry" name="billingAddress[country]" class="form-control" value="{{ client.billingAddress.country if is_edit else '' }}" required>
-                </div>
-            </div>
+                <!-- Onglet Adresses -->
+                <div class="tab-pane fade" id="addresses" role="tabpanel" aria-labelledby="addresses-tab">
+                    <h4>Adresse de Facturation</h4>
+                    <div class="mb-3">
+                        <label for="billingAddress" class="form-label">Adresse</label>
+                        <input type="text" id="billingAddress" name="billingAddress[address]" class="form-control" value="{{ client.billingAddress.address if is_edit else '' }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="billingPostalCode" class="form-label">Code Postal</label>
+                        <input type="text" id="billingPostalCode" name="billingAddress[postalCode]" class="form-control" value="{{ client.billingAddress.postalCode if is_edit else '' }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="billingCity" class="form-label">Localité</label>
+                        <input type="text" id="billingCity" name="billingAddress[city]" class="form-control" value="{{ client.billingAddress.city if is_edit else '' }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="billingCountry" class="form-label">Pays</label>
+                        <input type="text" id="billingCountry" name="billingAddress[country]" class="form-control" value="{{ client.billingAddress.country if is_edit else '' }}" required>
+                    </div>
 
-            <!-- Adresse de Prestation -->
-            <div class="mb-4">
-                <h4>Adresse de Prestation</h4>
-                <div class="mb-3">
-                    <label for="serviceAddress" class="form-label">Adresse</label>
-                    <input type="text" id="serviceAddress" name="serviceAddress[address]" class="form-control" value="{{ client.serviceAddress.address if is_edit else '' }}">
+                    <h4>Adresse de Prestation</h4>
+                    <div class="mb-3">
+                        <label for="serviceAddress" class="form-label">Adresse</label>
+                        <input type="text" id="serviceAddress" name="serviceAddress[address]" class="form-control" value="{{ client.serviceAddress.address if is_edit else '' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="servicePostalCode" class="form-label">Code Postal</label>
+                        <input type="text" id="servicePostalCode" name="serviceAddress[postalCode]" class="form-control" value="{{ client.serviceAddress.postalCode if is_edit else '' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="serviceCity" class="form-label">Localité</label>
+                        <input type="text" id="serviceCity" name="serviceAddress[city]" class="form-control" value="{{ client.serviceAddress.city if is_edit else '' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="serviceCountry" class="form-label">Pays</label>
+                        <input type="text" id="serviceCountry" name="serviceAddress[country]" class="form-control" value="{{ client.serviceAddress.country if is_edit else '' }}">
+                    </div>
                 </div>
-                <div class="mb-3">
-                    <label for="servicePostalCode" class="form-label">Code Postal</label>
-                    <input type="text" id="servicePostalCode" name="serviceAddress[postalCode]" class="form-control" value="{{ client.serviceAddress.postalCode if is_edit else '' }}">
-                </div>
-                <div class="mb-3">
-                    <label for="serviceCity" class="form-label">Localité</label>
-                    <input type="text" id="serviceCity" name="serviceAddress[city]" class="form-control" value="{{ client.serviceAddress.city if is_edit else '' }}">
-                </div>
-                <div class="mb-3">
-                    <label for="serviceCountry" class="form-label">Pays</label>
-                    <input type="text" id="serviceCountry" name="serviceAddress[country]" class="form-control" value="{{ client.serviceAddress.country if is_edit else '' }}">
-                </div>
-            </div>
 
-            <!-- Notes -->
-            <div class="mb-4">
-                <h4>Notes</h4>
-                <textarea name="notes" class="form-control" rows="3">{{ client.notes if is_edit else '' }}</textarea>
+                <!-- Onglet Notes -->
+                <div class="tab-pane fade" id="notes" role="tabpanel" aria-labelledby="notes-tab">
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Notes</label>
+                        <textarea id="notes" name="notes" class="form-control" rows="5">{{ client.notes if is_edit else '' }}</textarea>
+                    </div>
+                </div>
             </div>
 
             <!-- Boutons d'Action -->
-            <div class="d-flex justify-content-between">
+            <div class="d-flex justify-content-between mt-4">
                 <button type="submit" class="btn btn-primary">{{ "Mettre à jour" if is_edit else "Créer" }}</button>
                 <a href="?load=client_list" class="btn btn-secondary">Annuler</a>
             </div>
