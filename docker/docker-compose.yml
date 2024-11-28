@@ -1,0 +1,17 @@
+version: '3.8'
+services:
+  minio:
+    image: minio/minio
+    container_name: minio
+    ports:
+      - "9000:9000"  # Port pour l'interface web
+      - "9001:9001"  # Port pour la console d'administration
+    environment:
+      MINIO_ROOT_USER: minioadmin  # Identifiant administrateur
+      MINIO_ROOT_PASSWORD: minioadmin  # Mot de passe administrateur
+    command: server /data --console-address ":9001"  # Configuration console
+    volumes:
+      - minio-data:/data  # Persiste les données sur le volume Docker
+
+volumes:
+  minio-data:
