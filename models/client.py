@@ -4,23 +4,29 @@ from bson.objectid import ObjectId
 
 class Client:
     def __init__(
-        self,
-        company_name="",
-        responsible=None,
-        email="",
-        phone="",
-        gsm="",
-        vat_number="",
-        billing_address=None,
-        service_address=None,
-        notes="",
-        created_by="admin",
-        modified_by="admin",
-        creation_date=None,
-        modification_date=None,
-        client_id=None
+            self,
+            company_name="",
+            responsible=None,
+            email="",
+            phone="",
+            gsm="",
+            vat_number="",
+            billing_address=None,
+            service_address=None,
+            notes="",
+            contract_type="",  # Nouveau champ
+            contract_number="",  # Nouveau champ
+            entity="",  # Nouveau champ
+            info_scan_ctr="",  # Nouveau champ
+            contract_start_date=None,  # Nouveau champ
+            contract_duration=None,  # Nouveau champ
+            accounting_emails=None,  # Nouveau champ
+            created_by="admin",
+            modified_by="admin",
+            creation_date=None,
+            modification_date=None,
+            client_id=None
     ):
-        """Initialise un objet Client avec des valeurs par défaut."""
         self.company_name = company_name
         self.responsible = responsible or {"firstName": "", "lastName": ""}
         self.email = email
@@ -40,6 +46,14 @@ class Client:
             "country": ""
         }
         self.notes = notes
+        self.contract_type = contract_type
+        self.contract_number = contract_number
+        self.entity = entity
+
+        self.info_scan_ctr = info_scan_ctr
+        self.contract_start_date = contract_start_date
+        self.contract_duration = contract_duration
+        self.accounting_emails = accounting_emails or []
         self.user = {
             "createdBy": created_by,
             "modifiedBy": modified_by
@@ -48,13 +62,34 @@ class Client:
         self.modification_date = modification_date or datetime.utcnow()
         self.client_id = ObjectId(client_id) if client_id else None
 
+    def to_dict(self):
+        """
+        Convertit l'objet en dictionnaire compatible MongoDB.
+        """
+        return {
+            "companyName": self.company_name,
+            "responsible": self.responsible,
+            "email": self.email,
+            "phone": self.phone,
+            "gsm": self.gsm,
+            "vatNumber": self.vat_number,
+            "billingAddress": self.billing_address,
+            "serviceAddress": self.service_address,
+            "notes": self.notes,
+            "contractType": self.contract_type,
+            "contractNumber": self.contract_number,
+            "entity": self.entity,
+            "infoScanCtr": self.info_scan_ctr,
+            "contractStartDate": self.contract_start_date,
+            "contractDuration": self.contract_duration,
+            "accountingEmails": self.accounting_emails,
+            "user": self.user,
+            "creationDate": self.creation_date,
+            "modificationDate": self.modification_date,
+        }
+
     @classmethod
     def from_form(cls, form_data, existing_client=None):
-        """
-        Crée un objet Client à partir des données du formulaire.
-        :param form_data: Données soumises via un formulaire.
-        :param existing_client: Dictionnaire client existant, utilisé pour conserver certaines métadonnées.
-        """
         return cls(
             company_name=form_data.get("companyName", ""),
             responsible={
@@ -78,13 +113,20 @@ class Client:
                 "country": form_data.get("serviceAddress[country]", ""),
             },
             notes=form_data.get("notes", ""),
+            contract_type=form_data.get("contractType", ""),
+            contract_number=form_data.get("contractNumber", ""),
+            entity=form_data.get("entity", ""),
+
+            info_scan_ctr=form_data.get("infoScanCtr", ""),
+            contract_start_date=form_data.get("contractStartDate", ""),
+            contract_duration=form_data.get("contractDuration", ""),
+            accounting_emails=form_data.get("accountingEmails", "").split(","),
             created_by=existing_client["user"]["createdBy"] if existing_client else "admin",
-            modified_by="admin",  # Remplacer par l'utilisateur connecté si nécessaire
+            modified_by="admin",
             creation_date=existing_client.get("creationDate") if existing_client else None,
             modification_date=datetime.utcnow(),
             client_id=existing_client.get("_id") if existing_client else None
         )
-
     def save(self, db):
         """
         Sauvegarde le client dans la base de données.
@@ -97,24 +139,7 @@ class Client:
             inserted_id = db.clients.insert_one(data).inserted_id
             self.client_id = inserted_id  # Met à jour l'ID après insertion
 
-    def to_dict(self):
-        """
-        Convertit l'objet en dictionnaire compatible MongoDB.
-        """
-        return {
-            "companyName": self.company_name,
-            "responsible": self.responsible,
-            "email": self.email,
-            "phone": self.phone,
-            "gsm": self.gsm,
-            "vatNumber": self.vat_number,
-            "billingAddress": self.billing_address,
-            "serviceAddress": self.service_address,
-            "notes": self.notes,
-            "user": self.user,
-            "creationDate": self.creation_date,
-            "modificationDate": self.modification_date,
-        }
+
 
     def delete(self, db):
         """
