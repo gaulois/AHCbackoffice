@@ -2,13 +2,20 @@ import os
 
 from bson import ObjectId
 from dotenv import load_dotenv
+from minio import Minio
 from pymongo import MongoClient
 from flask import Flask, render_template, request, redirect, url_for
 from initialize_project import login_user, create_initial_admin_user, verify_login
 import bcrypt
 from datetime import datetime
-from controllers.client_management import create_client, edit_client
+from controllers.client_management import create_client, edit_client, create_client_user_c
 from controllers.user_management import create_user
+from models.ClientDocumentManager import ClientDocumentManager
+from models.client import Client
+
+from minio.error import S3Error
+from datetime import timedelta
+from flask import request, redirect, url_for
 
 # Charger les variables d'environnement
 load_dotenv()
@@ -35,7 +42,7 @@ else:
 # Connexion à MongoDB
 client = MongoClient(mongo_uri)
 db = client[mongo_database]
-
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # Limite à 16 Mo
 # Vérification de l'existence de la collection et création d'un admin si nécessaire
 if "userInternet" not in db.list_collection_names():
     create_initial_admin_user(db)
@@ -52,6 +59,19 @@ def home():
         return "Veuillez initialiser l'administrateur dans MongoDB."
 
 
+from flask import session, redirect, url_for, render_template, request
+
+from functools import wraps
+from flask import redirect, url_for, session
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if "user_id" not in session:  # Vérifie si la session contient un utilisateur
+            return redirect(url_for("login"))  # Redirige vers la page de connexion
+        return f(*args, **kwargs)
+    return decorated_function
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -60,15 +80,31 @@ def login():
 
         # Vérification des informations de connexion
         if verify_login(db, username, password):
+            # Stocker les informations de l'utilisateur dans la session
+            user = db.userInternet.find_one({"username": username})
+            session["user_id"] = str(user["_id"])
+            session["username"] = user["username"]
+            session["display_name"] = user["displayname"]
+
             return redirect(url_for("welcome"))
         else:
             return render_template("login.html", error="Nom d'utilisateur ou mot de passe incorrect.")
     return render_template("login.html")
 
+@app.route("/logout")
+def logout():
+    session.clear()  # Efface toutes les données de session
+    return redirect(url_for("login"))
+
 
 @app.route("/welcome")
+@login_required  # Utilisez le décorateur pour vérifier la session
 def welcome():
-    return render_template("welcome.html", message="Bienvenue !")
+    # Optionnel : vous pouvez afficher des informations sur l'utilisateur connecté
+    # username = session.get("username", "Utilisateur")
+    #
+    display_name = session["username"]
+    return render_template("welcome.html", message=f"Bienvenue, {display_name} !")
 
 
 @app.route("/create_user", methods=["GET", "POST"])
@@ -144,7 +180,14 @@ def delete_user(username):
 
 @app.route("/create_client", methods=["GET", "POST"])
 def create_client_route():
-    return create_client(db)  # Passe la base de données en argument
+    if request.method == "POST":
+        # Appelle la fonction centralisée pour créer le client
+        create_client(db, request.form, session["username"])
+        return redirect(url_for("welcome", load="client_list"))
+
+    # Passe un client vide pour la création
+    empty_client = Client().to_dict()
+    return render_template("create_client.html", client=empty_client, is_edit=False)
 
 
 @app.route("/client_list")
@@ -156,7 +199,7 @@ def client_list():
 
 @app.route("/edit_client/<client_id>", methods=["GET", "POST"])
 def edit_client_route(client_id):
-    return edit_client(db, client_id)
+    return edit_client(db, client_id, session["username"])
 
 
 @app.route("/delete_client/<client_id>", methods=["POST"])
@@ -174,6 +217,149 @@ def delete_client(client_id):
 @app.route("/delete_client/<client_id>", methods=["POST"])
 def delete_client_route(client_id):
     return delete_client(db, client_id)
+
+
+@app.route("/upload_document/<client_id>", methods=["POST"])
+def upload_document(client_id):
+    """
+    Gère l'upload de document pour un client spécifique.
+    """
+    print(f"Route /upload_document appelée avec client_id: {client_id}")
+    file = request.files.get("documentFile")
+    if not file or file.filename == "":
+        print("Erreur : Aucun fichier sélectionné ou fichier vide.")
+        return "Erreur : Aucun fichier sélectionné ou fichier vide.", 400
+
+    client_doc_manager = ClientDocumentManager(db)
+    print(f"Nom du fichier : {file.filename}")
+    print(f"Type MIME : {file.content_type}")
+
+    # Lire les données du fichier
+    file_data = file.stream.read()
+    file_size = len(file_data)
+    print(f"Taille des données lues : {file_size} octets")
+
+    if file_size == 0:
+        print("Erreur : Le fichier est vide.")
+        return "Erreur : Le fichier est vide.", 400
+
+    # Réinitialiser le pointeur du flux pour permettre d'autres lectures
+    file.stream.seek(0)
+
+    try:
+        client_doc_manager.handle_file_upload(client_id, file, session["username"])  # Remplacez "admin" par l'utilisateur connecté
+        print(f"Fichier {file.filename} reçu pour le client {client_id}.")
+
+        return redirect(url_for("welcome", load=f"edit_client_route={client_id}"))
+    except Exception as e:
+        print(f"Erreur lors de l'upload : {e}")
+        return f"Erreur : {e}", 400
+
+
+@app.route("/view_document/<document_id>", methods=["GET"])
+def view_document(document_id):
+    client_doc_manager = ClientDocumentManager(db)
+
+    try:
+        # Récupérer les métadonnées du document depuis MongoDB
+        document = client_doc_manager.get_document_by_id(document_id)
+        if not document:
+            return "Document introuvable.", 404
+
+        # Générer une URL signée pour l'accès temporaire
+        object_name = document["fileUrl"].split(f"/{client_doc_manager.bucket_name}/")[-1]
+        presigned_url = client_doc_manager.generate_presigned_url(object_name)
+
+        # Rediriger vers l'URL signée
+        return redirect(presigned_url)
+    except Exception as e:
+        return f"Erreur lors de l'accès au document : {e}", 500
+
+
+@app.route("/upload_page/<client_id>", methods=["GET"])
+def upload_page(client_id):
+    """
+    Affiche une page pour envoyer un fichier pour un client spécifique.
+    """
+    client = db.clients.find_one({"_id": ObjectId(client_id)})
+    if not client:
+        return "Client introuvable", 404
+    return render_template("upload_file.html", client=client)
+
+
+
+
+
+@app.route("/list_minio_files")
+def list_minio_files():
+    """
+    Affiche la liste des fichiers présents dans le bucket MinIO avec des liens pour les voir.
+    """
+    try:
+        # Configure le client MinIO
+        minio_client = Minio(
+            endpoint=os.getenv("AWS_ENDPOINT_URL").replace("http://", ""),
+            access_key=os.getenv("AWS_ACCESS_KEY_ID"),
+            secret_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+            secure=False  # Désactive SSL pour un environnement local
+        )
+
+        # Nom du bucket
+        bucket_name = os.getenv("AWS_BUCKET_NAME")
+
+        # Récupère la liste des objets
+        objects = minio_client.list_objects(bucket_name, recursive=True)
+        file_list = []
+
+        # Génère des URLs signées pour chaque fichier
+        for obj in objects:
+            presigned_url = minio_client.presigned_get_object(
+                bucket_name=bucket_name,
+                object_name=obj.object_name,
+                expires=timedelta(hours=1)  # URL valide pendant 1 heure
+            )
+            file_list.append({
+                "name": obj.object_name,
+                "size": obj.size,
+                "url": presigned_url
+            })
+
+        return render_template("minio_file_list.html", files=file_list)
+
+    except S3Error as e:
+        return f"Erreur lors de la récupération des fichiers : {str(e)}", 500
+
+
+@app.route("/client_login", methods=["GET", "POST"])
+def client_login():
+    if request.method == "POST":
+        username = request.form["username"]
+        password = request.form["password"]
+
+        # Vérifier l'utilisateur dans `clientUsers`
+        client_user = db.clientUsers.find_one({"username": username})
+        if client_user and bcrypt.checkpw(password.encode("utf-8"), client_user["password_hash"]):
+            session["client_user_id"] = str(client_user["_id"])  # Stocker l'utilisateur dans la session
+            session["client_id"] = client_user["clientId"]  # Stocker le client lié
+            return redirect(url_for("client_dashboard"))
+        else:
+            return render_template("client_login.html", error="Nom d'utilisateur ou mot de passe incorrect.")
+
+    return render_template("client_login.html")
+
+
+
+@app.route("/create_client_user/<client_id>", methods=["POST"])
+def create_client_user(client_id):
+    """
+    Route pour créer un utilisateur pour un client donné.
+    """
+    try:
+        # Passe l'utilisateur connecté comme créateur
+        create_client_user_c(db, client_id, request.form, session["username"])
+        return redirect(url_for("welcome", load=f"edit_client_route={client_id}"))
+    except ValueError as e:
+        return f"Erreur : {e}", 400
 
 if __name__ == "__main__":
     app.run(debug=True)

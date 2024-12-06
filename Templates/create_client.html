@@ -10,24 +10,39 @@
 <body>
     <div class="container mt-5">
         <h2 class="text-center">{{ "Éditer le Client" if is_edit else "Créer un Nouveau Client" }}</h2>
-        <form method="POST" action="{{ url_for('edit_client_route', client_id=client['_id']) if is_edit else url_for('create_client_route') }}" class="mt-4" class="was-validated">
+        <!-- Formulaire principal -->
+        <form method="POST" enctype="multipart/form-data" action="{{ url_for('edit_client_route', client_id=client['_id']) if is_edit else url_for('create_client_route') }}" class="mt-4 was-validated">
             <!-- Onglets -->
             <ul class="nav nav-tabs" id="clientTabs" role="tablist">
-                <li class="nav-item" role="presentation">
+                <li class="nav-item">
                     <button class="nav-link active" id="general-tab" data-bs-toggle="tab" data-bs-target="#general" type="button" role="tab" aria-controls="general" aria-selected="true">
                         Informations Générales
                     </button>
                 </li>
-                <li class="nav-item" role="presentation">
+                <li class="nav-item">
                     <button class="nav-link" id="addresses-tab" data-bs-toggle="tab" data-bs-target="#addresses" type="button" role="tab" aria-controls="addresses" aria-selected="false">
                         Adresses
                     </button>
                 </li>
-                <li class="nav-item" role="presentation">
+                <li class="nav-item">
                     <button class="nav-link" id="notes-tab" data-bs-toggle="tab" data-bs-target="#notes" type="button" role="tab" aria-controls="notes" aria-selected="false">
                         Notes
                     </button>
                 </li>
+                 {% if is_edit %}
+                <li class="nav-item">
+                    <button class="nav-link" id="documents-tab" data-bs-toggle="tab" data-bs-target="#documents" type="button" role="tab" aria-controls="documents" aria-selected="false">
+                        Documents
+                    </button>
+                     {% endif %}
+                </li>
+                {% if is_edit %}
+<li class="nav-item">
+    <button class="nav-link" id="users-tab" data-bs-toggle="tab" data-bs-target="#users" type="button" role="tab" aria-controls="users" aria-selected="false">
+        Utilisateurs
+    </button>
+</li>
+{% endif %}
             </ul>
 
             <!-- Contenu des Onglets -->
@@ -110,6 +125,57 @@
                         <textarea id="notes" name="notes" class="form-control" rows="5">{{ client.notes if is_edit else '' }}</textarea>
                     </div>
                 </div>
+                {% if is_edit %}
+                <!-- Onglet Documents -->
+                <div class="tab-pane fade" id="documents" role="tabpanel" aria-labelledby="documents-tab">
+                    <h4>Ajouter un Document</h4>
+                    <div class="mb-3">
+                        <label for="documentFile" class="form-label">Sélectionnez un fichier</label>
+                        <input type="file" id="documentFile" name="documentFile" class="form-control">
+                    </div>
+                    <button type="submit" formaction="{{ url_for('upload_document', client_id=client['_id']) }}" class="btn btn-primary">Uploader</button>
+
+                    <h4 class="mt-5">Documents Associés</h4>
+                    <ul class="list-group">
+                        {% for document in documents %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            {{ document.fileName }}
+                          <!--  <a href="{{ url_for('view_document', document_id=document['_id']) }}" target="_blank" class="btn btn-sm btn-secondary">Voir</a>
+-->
+                            <a href="{{ document.fileUrl }}" target="_blank" class="btn btn-sm btn-secondary">Voir</a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+              <div class="tab-pane fade" id="users" role="tabpanel" aria-labelledby="users-tab">
+    <h4>Créer un utilisateur pour ce client</h4>
+    <!-- Ajout de champs pour le nom d'utilisateur et le mot de passe -->
+    <div class="mb-3">
+        <label for="username" class="form-label">Nom d'utilisateur</label>
+        <input type="text" id="username" name="username" class="form-control" >
+    </div>
+    <div class="mb-3">
+        <label for="password" class="form-label">Mot de passe</label>
+        <input type="password" id="password" name="password" class="form-control"  >
+    </div>
+    <!-- Bouton pour soumettre les informations -->
+    <button type="submit" formaction="{{ url_for('create_client_user', client_id=client['_id']) }}"
+            class="btn btn-primary" >Créer l'utilisateur</button>
+
+
+
+    <h4 class="mt-5">Liste des utilisateurs</h4>
+    <ul class="list-group">
+        {% for user in client_users %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            {{ user.username }}
+            <span>Dernière connexion : {{ user.lastLogin or "Jamais" }}</span>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+                {% endif %}
+
             </div>
 
             <!-- Boutons d'Action -->
@@ -120,6 +186,43 @@
         </form>
     </div>
 
+
+<script>
+    document.getElementById("create-user-btn").addEventListener("click", function () {
+        const usernameField = document.getElementById("username");
+        const passwordField = document.getElementById("password");
+        const username = usernameField.value.trim();
+        const password = passwordField.value.trim();
+        const url = this.getAttribute("formaction");
+
+        // Validation des champs
+        if (!username || !password) {
+            alert("Veuillez remplir tous les champs.");
+            return;
+        }
+
+        // Création d'un formulaire temporaire pour envoyer les données
+        const tempForm = document.createElement("form");
+        tempForm.method = "POST";
+        tempForm.action = url;
+
+        const usernameInput = document.createElement("input");
+        usernameInput.type = "hidden";
+        usernameInput.name = "username";
+        usernameInput.value = username;
+
+        const passwordInput = document.createElement("input");
+        passwordInput.type = "hidden";
+        passwordInput.name = "password";
+        passwordInput.value = password;
+
+        tempForm.appendChild(usernameInput);
+        tempForm.appendChild(passwordInput);
+
+        document.body.appendChild(tempForm);
+        tempForm.submit();
+    });
+</script>
     <!-- Lien vers Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

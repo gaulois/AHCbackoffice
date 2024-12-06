@@ -1,1 +1,7 @@
 .env
+
+# Fichiers Python compilés
+__pycache__/
+*.pyc
+
+.DS_Store

@@ -37,6 +37,9 @@
                         <li class="nav-item">
                             <a href="#" class="nav-link" onclick="clearContent()">Retour à l'accueil</a>
                         </li>
+                         <li class="nav-item">
+                            <a href="/logout" class="nav-link" onclick="clearContent()">Logout</a>
+                        </li>
                     </ul>
                 </div>
             </nav>
@@ -103,17 +106,21 @@
         }
 
         // Chargement automatique en fonction des paramètres d'URL
-        const params = new URLSearchParams(window.location.search);
-        const contentToLoad = params.get('load');
-        if (contentToLoad === "user_list") {
-            loadContent('{{ url_for('user_list') }}');
-        } else if (contentToLoad === "create_user") {
-            loadContent('{{ url_for('create_user_route') }}');
-        } else if (contentToLoad === "client_list") {
-            loadContent('{{ url_for('client_list') }}');
-        } else if (contentToLoad === "create_client") {
-            loadContent('{{ url_for('create_client_route') }}');
-        }
+const params = new URLSearchParams(window.location.search);
+const contentToLoad = params.get('load');
+
+if (contentToLoad === "user_list") {
+    loadContent('{{ url_for('user_list') }}');
+} else if (contentToLoad === "create_user") {
+    loadContent('{{ url_for('create_user_route') }}');
+} else if (contentToLoad === "client_list") {
+    loadContent('{{ url_for('client_list') }}');
+} else if (contentToLoad === "create_client") {
+    loadContent('{{ url_for('create_client_route') }}');
+} else if (contentToLoad.startsWith("edit_client_route=")) {
+    const clientId = contentToLoad.split("=")[1];
+    loadContent(`{{ url_for('edit_client_route', client_id='') }}${clientId}`);
+}
     </script>
 
 </body>

@@ -1,6 +1,6 @@
 import bcrypt
 from pymongo.errors import DuplicateKeyError
-
+from flask import session
 
 def create_initial_admin_user(db):
     """Crée un utilisateur admin si la collection userInternet n'existe pas."""
@@ -47,8 +47,12 @@ def login_user(db):
 
 
 def verify_login(db, username, password):
-    """Vérifie les informations de connexion de l'utilisateur."""
+    """Vérifie les informations de connexion de l'utilisateur et met à jour la session."""
     user = db.userInternet.find_one({"username": username})
     if user and bcrypt.checkpw(password.encode("utf-8"), user["password_hash"]):
+        # Stocker les informations utilisateur dans la session
+        session["user_id"] = str(user["_id"])
+        session["username"] = user["username"]
+        session["display_name"] = user.get("displayname", "Utilisateur")
         return True
     return False

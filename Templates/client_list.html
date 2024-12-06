@@ -28,10 +28,10 @@
                     <td>{{ client.responsible.lastName }} {{ client.responsible.firstName }}</td>
                     <td>{{ client.email }}</td>
                     <td>
-                        <button class="btn btn-primary btn-sm" onclick="loadContent('{{ url_for('edit_client_route', client_id=client._id) }}')">Éditer</button>
-                       <button class="btn btn-danger btn-sm" onclick="confirmDelete('{{ url_for('delete_client_route', client_id=client['_id']) }}')">Supprimer</button>
-
-                                         </td>
+    <button class="btn btn-primary btn-sm" onclick="loadContent('{{ url_for('edit_client_route', client_id=client._id) }}')">Éditer</button>
+    <button class="btn btn-danger btn-sm" onclick="confirmDelete('{{ url_for('delete_client_route', client_id=client['_id']) }}')">Supprimer</button>
+    <a href="{{ url_for('upload_page', client_id=client['_id']) }}" class="btn btn-secondary btn-sm">Ajouter un Fichier</a>
+</td>
                 </tr>
                 {% endfor %}
             </tbody>
