@@ -46,7 +46,8 @@ class Client:
             "address": "",
             "postalCode": "",
             "city": "",
-            "country": ""
+            "country": "",
+            "treatmentPlaceName": ""
         }
         self.notes = notes
         self.contract_type = contract_type
@@ -119,6 +120,7 @@ class Client:
                 "postalCode": form_data.get("serviceAddress[postalCode]", ""),
                 "city": form_data.get("serviceAddress[city]", ""),
                 "country": form_data.get("serviceAddress[country]", ""),
+                "treatmentPlaceName": form_data.get("serviceAddress[treatmentPlaceName]", "")  #
             },
             notes=form_data.get("notes", ""),
             contract_type=form_data.get("contractType", ""),

@@ -101,6 +101,11 @@
 
                     <h4>Adresse de Prestation</h4>
                     <div class="mb-3">
+    <label for="treatmentPlaceName" class="form-label">Nom du Lieu de Traitement</label>
+    <input type="text" id="treatmentPlaceName" name="serviceAddress[treatmentPlaceName]" class="form-control"
+           value="{{ client.serviceAddress.treatmentPlaceName if is_edit else '' }}">
+</div>
+                    <div class="mb-3">
                         <label for="serviceAddress" class="form-label">Adresse</label>
                         <input type="text" id="serviceAddress" name="serviceAddress[address]" class="form-control" value="{{ client.serviceAddress.address if is_edit else '' }}">
                     </div>

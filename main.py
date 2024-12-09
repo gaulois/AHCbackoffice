@@ -192,13 +192,29 @@ def create_client_route():
     empty_client = Client().to_dict()
     return render_template("create_client.html", client=empty_client, is_edit=False)
 
-
 @app.route("/client_list")
 def client_list():
-    clients = db.clients.find({}, {"companyName": 1, "responsible": 1,
-                                   "email": 1})  # Ne récupérer que les champs nécessaires
-    return render_template("client_list.html", clients=clients)
+    page = int(request.args.get('page', 1))  # Page actuelle, par défaut 1
+    per_page = 50 # Nombre de clients par page
+    skip = (page - 1) * per_page
 
+    # Total des clients pour calculer les pages
+    total_clients = db.clients.count_documents({})
+
+    # Récupération des clients avec skip et limit
+    clients = list(db.clients.find({}, {
+        "companyName": 1,
+        "responsible": 1,
+        "email": 1,
+        "serviceAddress.treatmentPlaceName": 1,
+        "contractNumber": 1,
+        "entity": 1
+    }).skip(skip).limit(per_page))
+
+    # Nombre total de pages
+    total_pages = (total_clients + per_page - 1) // per_page
+
+    return render_template("client_list.html", clients=clients, page=page, total_pages=total_pages)
 
 @app.route("/edit_client/<client_id>", methods=["GET", "POST"])
 def edit_client_route(client_id):
@@ -424,6 +440,7 @@ def upload_excel():
                         "postalCode": row.get("ggg ", "") or "",
                         "city": row.get("ville lieu de traitement", "") or "",
                         "country": "",
+                        "treatmentPlaceName": row.get("nom lieux de traitement") or "",
                     },
                     "notes": row.get("NOTES", "") or "",
                     "contractType": row.get("type de contrat", "") or "",
