@@ -154,6 +154,19 @@
     <label for="accountingEmails" class="form-label">Mails comptabilité</label>
     <textarea id="accountingEmails" name="accountingEmails" class="form-control">{{ client.accountingEmails | join(', ') if is_edit else '' }}</textarea>
 </div>
+
+                    <div class="mb-3">
+    <label for="nbPrestations" class="form-label">Nb de Prestations</label>
+    <input type="number" id="nbPrestations" name="nbPrestations" class="form-control" value="{{ client.nbPrestations if is_edit else '' }}">
+</div>
+<div class="mb-3">
+    <label for="planningInfo" class="form-label">Infos pour plannings</label>
+    <textarea id="planningInfo" name="planningInfo" class="form-control" rows="3">{{ client.planningInfo if is_edit else '' }}</textarea>
+</div>
+<div class="form-check mb-3">
+    <input type="checkbox" id="emailBeforeService" name="emailBeforeService" class="form-check-input" {% if client.emailBeforeService %}checked{% endif %}>
+    <label for="emailBeforeService" class="form-check-label">Mail client avant prestation</label>
+</div>
                 </div>
                 {% if is_edit %}
                 <!-- Onglet Documents -->

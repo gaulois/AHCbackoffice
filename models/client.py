@@ -14,13 +14,16 @@ class Client:
             billing_address=None,
             service_address=None,
             notes="",
-            contract_type="",  # Nouveau champ
-            contract_number="",  # Nouveau champ
-            entity="",  # Nouveau champ
-            info_scan_ctr="",  # Nouveau champ
-            contract_start_date=None,  # Nouveau champ
-            contract_duration=None,  # Nouveau champ
-            accounting_emails=None,  # Nouveau champ
+            contract_type="",
+            contract_number="",
+            entity="",
+            info_scan_ctr="",
+            contract_start_date=None,
+            contract_duration=None,
+            accounting_emails=None,
+            nb_prestations=0,  # Nouveau champ
+            planning_info="",  # Nouveau champ
+            email_before_service=False,  # Nouveau champ
             created_by="admin",
             modified_by="admin",
             creation_date=None,
@@ -49,11 +52,13 @@ class Client:
         self.contract_type = contract_type
         self.contract_number = contract_number
         self.entity = entity
-
         self.info_scan_ctr = info_scan_ctr
         self.contract_start_date = contract_start_date
         self.contract_duration = contract_duration
         self.accounting_emails = accounting_emails or []
+        self.nb_prestations = nb_prestations
+        self.planning_info = planning_info
+        self.email_before_service = email_before_service
         self.user = {
             "createdBy": created_by,
             "modifiedBy": modified_by
@@ -63,9 +68,6 @@ class Client:
         self.client_id = ObjectId(client_id) if client_id else None
 
     def to_dict(self):
-        """
-        Convertit l'objet en dictionnaire compatible MongoDB.
-        """
         return {
             "companyName": self.company_name,
             "responsible": self.responsible,
@@ -83,6 +85,9 @@ class Client:
             "contractStartDate": self.contract_start_date,
             "contractDuration": self.contract_duration,
             "accountingEmails": self.accounting_emails,
+            "nbPrestations": self.nb_prestations,
+            "planningInfo": self.planning_info,
+            "emailBeforeService": self.email_before_service,
             "user": self.user,
             "creationDate": self.creation_date,
             "modificationDate": self.modification_date,
@@ -90,6 +95,9 @@ class Client:
 
     @classmethod
     def from_form(cls, form_data, existing_client=None):
+        """
+        Crée un objet Client à partir des données du formulaire.
+        """
         return cls(
             company_name=form_data.get("companyName", ""),
             responsible={
@@ -116,13 +124,16 @@ class Client:
             contract_type=form_data.get("contractType", ""),
             contract_number=form_data.get("contractNumber", ""),
             entity=form_data.get("entity", ""),
-
             info_scan_ctr=form_data.get("infoScanCtr", ""),
             contract_start_date=form_data.get("contractStartDate", ""),
             contract_duration=form_data.get("contractDuration", ""),
             accounting_emails=form_data.get("accountingEmails", "").split(","),
+            nb_prestations=int(form_data.get("nbPrestations", 0)) if form_data.get("nbPrestations") else 0,
+            # Ajout de vérification
+            planning_info=form_data.get("planningInfo", ""),
+            email_before_service=form_data.get("emailBeforeService") == "on",  # Vérifie si la case est cochée
             created_by=existing_client["user"]["createdBy"] if existing_client else "admin",
-            modified_by="admin",
+            modified_by="admin",  # Remplacer par l'utilisateur connecté si nécessaire
             creation_date=existing_client.get("creationDate") if existing_client else None,
             modification_date=datetime.utcnow(),
             client_id=existing_client.get("_id") if existing_client else None

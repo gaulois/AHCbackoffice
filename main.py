@@ -1,5 +1,6 @@
 import os
 
+import pandas as pd
 from bson import ObjectId
 from dotenv import load_dotenv
 from minio import Minio
@@ -15,7 +16,11 @@ from models.client import Client
 
 from minio.error import S3Error
 from datetime import timedelta
-from flask import request, redirect, url_for
+
+from flask import session, redirect, url_for, render_template, request
+
+from functools import wraps
+from flask import redirect, url_for, session
 
 # Charger les variables d'environnement
 load_dotenv()
@@ -59,18 +64,15 @@ def home():
         return "Veuillez initialiser l'administrateur dans MongoDB."
 
 
-from flask import session, redirect, url_for, render_template, request
-
-from functools import wraps
-from flask import redirect, url_for, session
-
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if "user_id" not in session:  # Vérifie si la session contient un utilisateur
             return redirect(url_for("login"))  # Redirige vers la page de connexion
         return f(*args, **kwargs)
+
     return decorated_function
+
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -90,6 +92,7 @@ def login():
         else:
             return render_template("login.html", error="Nom d'utilisateur ou mot de passe incorrect.")
     return render_template("login.html")
+
 
 @app.route("/logout")
 def logout():
@@ -247,7 +250,8 @@ def upload_document(client_id):
     file.stream.seek(0)
 
     try:
-        client_doc_manager.handle_file_upload(client_id, file, session["username"])  # Remplacez "admin" par l'utilisateur connecté
+        client_doc_manager.handle_file_upload(client_id, file,
+                                              session["username"])  # Remplacez "admin" par l'utilisateur connecté
         print(f"Fichier {file.filename} reçu pour le client {client_id}.")
 
         return redirect(url_for("welcome", load=f"edit_client_route={client_id}"))
@@ -285,9 +289,6 @@ def upload_page(client_id):
     if not client:
         return "Client introuvable", 404
     return render_template("upload_file.html", client=client)
-
-
-
 
 
 @app.route("/list_minio_files")
@@ -348,7 +349,6 @@ def client_login():
     return render_template("client_login.html")
 
 
-
 @app.route("/create_client_user/<client_id>", methods=["POST"])
 def create_client_user(client_id):
     """
@@ -360,6 +360,99 @@ def create_client_user(client_id):
         return redirect(url_for("welcome", load=f"edit_client_route={client_id}"))
     except ValueError as e:
         return f"Erreur : {e}", 400
+
+
+import re  # Import pour utiliser les expressions régulières
+from datetime import datetime
+
+@app.route('/upload_excel', methods=['GET', 'POST'])
+def upload_excel():
+    if request.method == 'POST':
+        file = request.files.get('file')
+        if not file:
+            return "Erreur : Aucun fichier sélectionné.", 400
+
+        # Lire le fichier Excel
+        try:
+            df = pd.read_excel(file)
+        except Exception as e:
+            return f"Erreur lors de la lecture du fichier Excel : {e}", 400
+
+        # Traitement des données
+        for _, row in df.iterrows():
+            try:
+                # Extraction du nombre de mois (contractDuration)
+                contract_duration_raw = row.get("Nb de mois du contrat", "")
+                contract_duration = 0  # Valeur par défaut si extraction échoue
+
+                if isinstance(contract_duration_raw, str):
+                    match = re.search(r'\d+', contract_duration_raw)
+                    if match:
+                        contract_duration = int(match.group())
+
+                # Conversion de la date de début de contrat (contractStartDate)
+                contract_start_date_raw = row.get("Date début du contrat", "")
+                contract_start_date = ""
+                if isinstance(contract_start_date_raw, datetime):  # Si c'est un objet datetime
+                    contract_start_date = contract_start_date_raw.strftime("%Y-%m-%d")
+                elif isinstance(contract_start_date_raw, str):
+                    try:
+                        parsed_date = datetime.strptime(contract_start_date_raw, "%d/%m/%Y")
+                        contract_start_date = parsed_date.strftime("%Y-%m-%d")
+                    except ValueError:
+                        contract_start_date = ""
+
+                # Mappez les colonnes Excel aux champs de la base de données
+                client_data = {
+                    "companyName": row.get("Company name", "") or "",
+                    "responsible": {
+                        "firstName": row.get("First Name", "") or "",
+                        "lastName": row.get("Last Name", "") or "",
+                    },
+                    "email": row.get("Email", "") or "",
+                    "phone": row.get("Phone", "") or "",
+                    "gsm": row.get("GSM", "") or "",
+                    "vatNumber": row.get("TVA", "") or "",
+                    "billingAddress": {
+                        "address": row.get("adresses siège social", "") or "",
+                        "postalCode": row.get("cp siège social", "") or "",
+                        "city": row.get("ville siège social", "") or "",
+                        "country": "",
+                    },
+                    "serviceAddress": {
+                        "address": row.get("adresse lieu de traitement", "") or "",
+                        "postalCode": row.get("ggg ", "") or "",
+                        "city": row.get("ville lieu de traitement", "") or "",
+                        "country": "",
+                    },
+                    "notes": row.get("NOTES", "") or "",
+                    "contractType": row.get("type de contrat", "") or "",
+                    "contractNumber": row.get("N° Contrat", "") or "",
+                    "entity": row.get("Entité ", "") or "",
+                    "infoScanCtr": row.get("INFO SCAN CTR", "") or "",
+                    "contractStartDate": contract_start_date,
+                    "contractDuration": contract_duration,
+                    "accountingEmails": row.get("mails comptabilité", "").split(",") if row.get("mails comptabilité") else [],
+                    "nbPrestations": int(row.get("Nb de Prestions", 0)) if not pd.isna(row.get("Nb de Prestions")) else 0,
+                    "planningInfo": row.get("INFOS POUR PLANNINGS", "") or "",
+                    "emailBeforeService": row.get("MAIL CLIENT AVANT PRESTATION", "") == "on",
+                    "user": {
+                        "createdBy": "admin",  # Remplacer par l'utilisateur connecté si nécessaire
+                        "modifiedBy": "admin",
+                    },
+                    "creationDate": datetime.utcnow(),
+                    "modificationDate": datetime.utcnow(),
+                }
+
+                # Insertion dans MongoDB
+                db.clients.insert_one(client_data)
+            except Exception as e:
+                print(f"Erreur lors du traitement de la ligne {row.to_dict()} : {e}")
+
+        return redirect(url_for("welcome", load="client_list"))
+
+    return render_template('upload_excel.html')
+
 
 if __name__ == "__main__":
     app.run(debug=True)
