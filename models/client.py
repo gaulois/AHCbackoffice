@@ -1,6 +1,6 @@
 from datetime import datetime
 from bson.objectid import ObjectId
-
+from zoneinfo import ZoneInfo
 
 class Client:
     def __init__(
@@ -64,8 +64,8 @@ class Client:
             "createdBy": created_by,
             "modifiedBy": modified_by
         }
-        self.creation_date = creation_date or datetime.utcnow()
-        self.modification_date = modification_date or datetime.utcnow()
+        self.creation_date = creation_date or datetime.now(ZoneInfo("Europe/Paris"))
+        self.modification_date = modification_date or datetime.now(ZoneInfo("Europe/Paris"))
         self.client_id = ObjectId(client_id) if client_id else None
 
     def to_dict(self):
@@ -137,7 +137,7 @@ class Client:
             created_by=existing_client["user"]["createdBy"] if existing_client else "admin",
             modified_by="admin",  # Remplacer par l'utilisateur connecté si nécessaire
             creation_date=existing_client.get("creationDate") if existing_client else None,
-            modification_date=datetime.utcnow(),
+            modification_date=datetime.now(ZoneInfo("Europe/Paris")),
             client_id=existing_client.get("_id") if existing_client else None
         )
     def save(self, db):

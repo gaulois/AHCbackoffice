@@ -16,6 +16,7 @@ from models.client import Client
 
 from minio.error import S3Error
 from datetime import timedelta
+from zoneinfo import ZoneInfo
 
 from flask import session, redirect, url_for, render_template, request
 
@@ -96,8 +97,15 @@ def login():
 
 @app.route("/logout")
 def logout():
-    session.clear()  # Efface toutes les données de session
+    session.pop("user_id", None)  # Efface uniquement les clés d'admi
     return redirect(url_for("login"))
+
+@app.route("/logout_client")
+def logout_client():
+    session.pop("client_user_id", None)  # Efface uniquement les clés de client
+    session.pop("client_id", None)# Efface toutes les données de session
+    return redirect(url_for("client_login"))
+
 
 
 @app.route("/welcome")
@@ -107,7 +115,7 @@ def welcome():
     # username = session.get("username", "Utilisateur")
     #
     display_name = session["username"]
-    return render_template("welcome.html", message=f"Bienvenue, {display_name} !")
+    return render_template("welcome.html", message=f"Bienvenue, {display_name} ")
 
 
 @app.route("/create_user", methods=["GET", "POST"])
@@ -191,18 +199,37 @@ def create_client_route():
     # Passe un client vide pour la création
     empty_client = Client().to_dict()
     return render_template("create_client.html", client=empty_client, is_edit=False)
-
 @app.route("/client_list")
 def client_list():
     page = int(request.args.get('page', 1))  # Page actuelle, par défaut 1
-    per_page = 50 # Nombre de clients par page
+    per_page = 50  # Nombre de clients par page
     skip = (page - 1) * per_page
 
-    # Total des clients pour calculer les pages
-    total_clients = db.clients.count_documents({})
+    # Recherche et filtre
+    search_query = request.args.get('search', '').strip()
 
-    # Récupération des clients avec skip et limit
-    clients = list(db.clients.find({}, {
+    # Construire la requête MongoDB
+    query = {}
+    if search_query:
+        try:
+            # Si la recherche est un entier, rechercher dans `contractNumber`
+            search_number = int(search_query)
+            query["$or"] = [
+                {"contractNumber": search_number},
+                {"entity": search_number}
+            ]
+        except ValueError:
+            # Sinon, utiliser une recherche textuelle
+            query["$or"] = [
+                {"companyName": {"$regex": search_query, "$options": "i"}},
+                {"email": {"$regex": search_query, "$options": "i"}}
+            ]
+
+    # Total des clients pour pagination
+    total_clients = db.clients.count_documents(query)
+
+    # Récupération des clients avec pagination
+    clients = list(db.clients.find(query, {
         "companyName": 1,
         "responsible": 1,
         "email": 1,
@@ -211,11 +238,10 @@ def client_list():
         "entity": 1
     }).skip(skip).limit(per_page))
 
-    # Nombre total de pages
+    # Calcul du nombre total de pages
     total_pages = (total_clients + per_page - 1) // per_page
 
     return render_template("client_list.html", clients=clients, page=page, total_pages=total_pages)
-
 @app.route("/edit_client/<client_id>", methods=["GET", "POST"])
 def edit_client_route(client_id):
     return edit_client(db, client_id, session["username"])
@@ -245,13 +271,20 @@ def upload_document(client_id):
     """
     print(f"Route /upload_document appelée avec client_id: {client_id}")
     file = request.files.get("documentFile")
+    document_type = request.form.get("documentType")  # Récupérer le type de document
+
     if not file or file.filename == "":
         print("Erreur : Aucun fichier sélectionné ou fichier vide.")
         return "Erreur : Aucun fichier sélectionné ou fichier vide.", 400
 
+    if not document_type:
+        print("Erreur : Type de document non spécifié.")
+        return "Erreur : Type de document non spécifié.", 400
+
     client_doc_manager = ClientDocumentManager(db)
     print(f"Nom du fichier : {file.filename}")
     print(f"Type MIME : {file.content_type}")
+    print(f"Type de document : {document_type}")
 
     # Lire les données du fichier
     file_data = file.stream.read()
@@ -266,15 +299,13 @@ def upload_document(client_id):
     file.stream.seek(0)
 
     try:
-        client_doc_manager.handle_file_upload(client_id, file,
-                                              session["username"])  # Remplacez "admin" par l'utilisateur connecté
+        client_doc_manager.handle_file_upload(client_id, file, session["username"], document_type)  # Passez le type
         print(f"Fichier {file.filename} reçu pour le client {client_id}.")
 
         return redirect(url_for("welcome", load=f"edit_client_route={client_id}"))
     except Exception as e:
         print(f"Erreur lors de l'upload : {e}")
         return f"Erreur : {e}", 400
-
 
 @app.route("/view_document/<document_id>", methods=["GET"])
 def view_document(document_id):
@@ -356,8 +387,16 @@ def client_login():
         # Vérifier l'utilisateur dans `clientUsers`
         client_user = db.clientUsers.find_one({"username": username})
         if client_user and bcrypt.checkpw(password.encode("utf-8"), client_user["password_hash"]):
+            # Mettre à jour la date et l'heure de la dernière connexion
+            db.clientUsers.update_one(
+                {"_id": client_user["_id"]},
+                {"$set": {"lastLogin": datetime.now(ZoneInfo("Europe/Paris"))}}
+            )
+
+            # Stocker les informations dans la session
             session["client_user_id"] = str(client_user["_id"])  # Stocker l'utilisateur dans la session
             session["client_id"] = client_user["clientId"]  # Stocker le client lié
+
             return redirect(url_for("client_dashboard"))
         else:
             return render_template("client_login.html", error="Nom d'utilisateur ou mot de passe incorrect.")
@@ -457,8 +496,8 @@ def upload_excel():
                         "createdBy": "admin",  # Remplacer par l'utilisateur connecté si nécessaire
                         "modifiedBy": "admin",
                     },
-                    "creationDate": datetime.utcnow(),
-                    "modificationDate": datetime.utcnow(),
+                    "creationDate": datetime.now(ZoneInfo("Europe/Paris")),
+                    "modificationDate": datetime.now(ZoneInfo("Europe/Paris")),
                 }
 
                 # Insertion dans MongoDB
@@ -469,6 +508,40 @@ def upload_excel():
         return redirect(url_for("welcome", load="client_list"))
 
     return render_template('upload_excel.html')
+
+@app.route("/add_intervention/<client_id>", methods=["POST"])
+def add_intervention(client_id):
+    """
+    Ajoute une intervention pour un client spécifique.
+    """
+    try:
+        # Récupérer les données du formulaire
+        new_date = request.form.get("newInterventionDate")
+        description = request.form.get("description", "").strip()
+
+        # Vérifier que la date est fournie
+        if not new_date:
+            return "Erreur : La date d'intervention est obligatoire.", 400
+
+        # Convertir la date en format datetime
+        intervention_date = datetime.strptime(new_date, "%Y-%m-%d")
+
+        # Préparer les données pour l'insertion
+        intervention = {
+            "clientId": client_id,
+            "date": intervention_date,
+            "description": description
+        }
+
+        # Insérer dans la collection `interventions`
+        db.interventions.insert_one(intervention)
+
+        # Rediriger vers l'onglet Dates d'Intervention du client
+        return redirect(url_for("welcome", load=f"edit_client_route={client_id}#dates"))
+
+    except Exception as e:
+        print(f"Erreur lors de l'ajout de l'intervention : {e}")
+        return f"Erreur : {e}", 500
 
 
 if __name__ == "__main__":

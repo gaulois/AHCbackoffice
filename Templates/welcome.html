@@ -49,7 +49,7 @@
                 <div id="content-container">
                     <!-- Contenu par défaut de bienvenue -->
                     <div class="d-flex justify-content-center align-items-center mt-5">
-                        <h1 class="text-center">Bienvenue dans l'application</h1>
+                        <h1 class="text-center">{{message}} dans l'application </h1>
                     </div>
                     <p class="text-center">Utilisez le menu à gauche pour naviguer dans l'application.</p>
                 </div>
@@ -105,17 +105,19 @@
             `;
         }
 
-        // Chargement automatique en fonction des paramètres d'URL
+ // Chargement automatique en fonction des paramètres d'URL
 const params = new URLSearchParams(window.location.search);
 const contentToLoad = params.get('load');
 const page = params.get('page') || 1; // Par défaut, la page est 1
+const searchQuery = params.get('search') || ''; // Requête de recherche par défaut vide
+const filterOption = params.get('filter') || ''; // Filtrage par défaut vide
 
 if (contentToLoad === "user_list") {
     loadContent('{{ url_for('user_list') }}');
 } else if (contentToLoad === "create_user") {
     loadContent('{{ url_for('create_user_route') }}');
 } else if (contentToLoad === "client_list") {
-    loadContent(`{{ url_for('client_list') }}?page=${page}`);
+    loadContent(`{{ url_for('client_list') }}?page=${page}&search=${searchQuery}&filter=${filterOption}`);
 } else if (contentToLoad === "create_client") {
     loadContent('{{ url_for('create_client_route') }}');
 } else if (contentToLoad.startsWith("edit_client_route=")) {

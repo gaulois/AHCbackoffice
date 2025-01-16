@@ -4,6 +4,7 @@ import os
 from datetime import datetime, timedelta
 from werkzeug.utils import secure_filename
 from bson.objectid import ObjectId
+from zoneinfo import ZoneInfo
 
 
 class ClientDocumentManager:
@@ -24,53 +25,6 @@ class ClientDocumentManager:
         # Vérifie si le bucket existe, sinon le crée
         if not self.minio_client.bucket_exists(self.bucket_name):
             self.minio_client.make_bucket(self.bucket_name)
-
-    def handle_file_upload(self, client_id, file, uploaded_by):
-        """
-        Gère l'upload d'un fichier pour un client.
-        :param client_id: ID du client.
-        :param file: Fichier uploadé via un formulaire.
-        :param uploaded_by: Nom ou ID de l'utilisateur ayant effectué l'upload.
-        """
-        if not file:
-            raise ValueError("Aucun fichier reçu pour l'upload.")
-
-        # Nettoyage du nom de fichier
-        raw_filename = secure_filename(file.filename)  # Supprime les caractères spéciaux et espaces
-        cleaned_filename = raw_filename.replace(" ", "_")  # Remplace les espaces restants par des underscores
-        unique_filename = f"{client_id}/{datetime.utcnow().timestamp()}_{cleaned_filename}"
-        #unique_filename = f"{client_id}/{cleaned_filename}"
-        # Lire les données pour calculer la taille si nécessaire
-        file_data = file.stream.read()
-        file_size = len(file_data) if file.content_length == 0 else file.content_length
-
-        # Réinitialiser le flux avant l'upload
-        file.stream.seek(0)
-
-        try:
-            # Upload du fichier dans MinIO
-            self.minio_client.put_object(
-                bucket_name=self.bucket_name,
-                object_name=unique_filename,
-                data=file.stream,
-                length=file_size,
-                content_type=file.content_type,
-            )
-
-            # Sauvegarde les métadonnées dans MongoDB
-            document = {
-                "clientId": client_id,
-                "fileName": raw_filename,  # Conserve le nom original pour affichage
-                "filePath": unique_filename,  # Utilise le chemin nettoyé pour MinIO
-                "uploadDate": datetime.utcnow(),
-                "uploadedBy": uploaded_by,
-                "fileSize": file_size,
-                "fileType": file.content_type,
-            }
-            self.db.clientDocuments.insert_one(document)
-
-        except S3Error as e:
-            raise ValueError(f"Erreur lors de l'upload vers MinIO : {str(e)}")
 
     def get_documents_by_client(self, client_id):
         """
@@ -154,3 +108,53 @@ class ClientDocumentManager:
             raise ValueError(f"Erreur lors de la génération de l'URL signée pour le document : {e}")
 
         return document
+
+    def handle_file_upload(self, client_id, file, uploaded_by, document_type):
+        """
+        Gère l'upload d'un fichier pour un client.
+        :param client_id: ID du client.
+        :param file: Fichier uploadé via un formulaire.
+        :param uploaded_by: Nom ou ID de l'utilisateur ayant effectué l'upload.
+        :param document_type: Type de document (ex. facture, contrat, autre).
+        """
+        if not file:
+            raise ValueError("Aucun fichier reçu pour l'upload.")
+
+        # Nettoyage du nom de fichier
+        raw_filename = secure_filename(file.filename)
+        cleaned_filename = raw_filename.replace(" ", "_")
+        unique_filename = f"{client_id}/{datetime.now(ZoneInfo('Europe/Paris')).timestamp()}_{cleaned_filename}"
+
+        # Lire les données pour calculer la taille si nécessaire
+        file_data = file.stream.read()
+        file_size = len(file_data) if file.content_length == 0 else file.content_length
+
+        # Réinitialiser le flux avant l'upload
+        file.stream.seek(0)
+
+        try:
+            # Upload du fichier dans MinIO
+            self.minio_client.put_object(
+                bucket_name=self.bucket_name,
+                object_name=unique_filename,
+                data=file.stream,
+                length=file_size,
+                content_type=file.content_type,
+            )
+
+            # Sauvegarde des métadonnées dans MongoDB
+            document = {
+                "clientId": client_id,
+                "fileName": raw_filename,
+                "filePath": unique_filename,
+                "uploadDate": datetime.now(ZoneInfo("Europe/Paris")),
+                "uploadedBy": uploaded_by,
+                "fileSize": file_size,
+                "fileType": file.content_type,
+                "documentType": document_type,  # Ajout du type de document
+            }
+            self.db.clientDocuments.insert_one(document)
+
+        except S3Error as e:
+            raise ValueError(f"Erreur lors de l'upload vers MinIO : {str(e)}")
+

@@ -41,7 +41,12 @@
     <button class="nav-link" id="users-tab" data-bs-toggle="tab" data-bs-target="#users" type="button" role="tab" aria-controls="users" aria-selected="false">
         Utilisateurs
     </button>
-</li>
+
+    <li class="nav-item">
+                    <button class="nav-link" id="dates-tab" data-bs-toggle="tab" data-bs-target="#dates" type="button" role="tab" aria-controls="dates" aria-selected="false">
+                        Dates d'Intervention
+                    </button>
+                </li>
 {% endif %}
             </ul>
 
@@ -174,6 +179,7 @@
 </div>
                 </div>
                 {% if is_edit %}
+
                 <!-- Onglet Documents -->
                 <div class="tab-pane fade" id="documents" role="tabpanel" aria-labelledby="documents-tab">
                     <h4>Ajouter un Document</h4>
@@ -181,20 +187,33 @@
                         <label for="documentFile" class="form-label">Sélectionnez un fichier</label>
                         <input type="file" id="documentFile" name="documentFile" class="form-control">
                     </div>
+                     <div class="mb-3">
+        <label for="documentType" class="form-label">Type de Document</label>
+        <select id="documentType" name="documentType" class="form-select" required>
+            <option value="facture">Facture</option>
+            <option value="intervention">Intervention</option>
+            <option value="contrat">Contrat</option>
+            <option value="autre">Autre</option>
+        </select>
+    </div>
                     <button type="submit" formaction="{{ url_for('upload_document', client_id=client['_id']) }}" class="btn btn-primary">Uploader</button>
 
-                    <h4 class="mt-5">Documents Associés</h4>
-                    <ul class="list-group">
-                        {% for document in documents %}
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            {{ document.fileName }}
-                          <!--  <a href="{{ url_for('view_document', document_id=document['_id']) }}" target="_blank" class="btn btn-sm btn-secondary">Voir</a>
--->
-                            <a href="{{ document.fileUrl }}" target="_blank" class="btn btn-sm btn-secondary">Voir</a>
-                        </li>
-                        {% endfor %}
-                    </ul>
+                   <h4 class="mt-5">Documents Associés</h4>
+<ul class="list-group">
+    {% for document in documents %}
+    <li class="list-group-item d-flex justify-content-between align-items-center">
+        <div>
+            <strong>Type :</strong> {{ document.documentType }}
+            <br>
+            <strong>Nom :</strong> {{ document.fileName }}
+        </div>
+        <a href="{{ document.fileUrl }}" target="_blank" class="btn btn-sm btn-secondary">Voir</a>
+    </li>
+    {% endfor %}
+</ul>
                 </div>
+
+
               <div class="tab-pane fade" id="users" role="tabpanel" aria-labelledby="users-tab">
     <h4>Créer un utilisateur pour ce client</h4>
     <!-- Ajout de champs pour le nom d'utilisateur et le mot de passe -->
@@ -214,13 +233,49 @@
 
     <h4 class="mt-5">Liste des utilisateurs</h4>
     <ul class="list-group">
-        {% for user in client_users %}
+    {% for user in client_users %}
+    <li class="list-group-item d-flex justify-content-between align-items-center">
+        {{ user.username }}
+        <span>Dernière connexion : {{ user.lastLogin.strftime('%d/%m/%Y %H:%M:%S') if user.lastLogin else "Jamais" }}</span>
+    </li>
+    {% endfor %}
+</ul>
+</div>
+                <!-- Onglet Dates d'Intervention -->
+<div class="tab-pane fade" id="dates" role="tabpanel" aria-labelledby="dates-tab">
+    <h4 class="mt-4">Dates d'Intervention</h4>
+    <ul class="list-group">
+        {% for intervention in interventions %}
         <li class="list-group-item d-flex justify-content-between align-items-center">
-            {{ user.username }}
-            <span>Dernière connexion : {{ user.lastLogin or "Jamais" }}</span>
+            <div>
+                <strong>Date :</strong> {{ intervention.date.strftime('%d/%m/%Y') }}
+                <br>
+                <strong>Description :</strong> {{ intervention.description }}
+            </div>
         </li>
         {% endfor %}
+        {% if not interventions %}
+        <li class="list-group-item text-muted">
+            Aucune intervention trouvée pour ce client.
+        </li>
+        {% endif %}
     </ul>
+
+    <div class="mt-4">
+        <h5>Ajouter une Nouvelle Intervention</h5>
+        <form method="POST">
+            <div class="mb-3">
+                <label for="newInterventionDate" class="form-label">Date d'Intervention</label>
+                <input type="date" id="newInterventionDate" name="newInterventionDate" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label for="description" class="form-label">Description</label>
+                <textarea id="description" name="description" class="form-control" rows="3" placeholder="Ajoutez une description (facultatif)"></textarea>
+            </div>
+            <!-- Utilisation de formaction pour pointer vers la bonne route -->
+            <button type="submit" formaction="{{ url_for('add_intervention', client_id=client['_id']) }}" class="btn btn-primary">Ajouter</button>
+        </form>
+    </div>
 </div>
                 {% endif %}
 

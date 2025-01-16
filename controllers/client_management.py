@@ -33,17 +33,17 @@ def edit_client(db, client_id, username):
         client.save(db)  # Sauvegarde les modifications
         return redirect(url_for("welcome", load="client_list"))
 
-    # Charger les données actuelles du client pour pré-remplir le formulaire
+    # Charger les données actuelles du client
     client_data = db.clients.find_one({"_id": ObjectId(client_id)})
-
     if not client_data:
         return "Client introuvable", 404
 
-    # Charger les documents associés au client
-    client_doc_manager = ClientDocumentManager(db)  # Initialise le gestionnaire des documents
-    documents = client_doc_manager.get_documents_by_client(client_id)
+    # Charger les interventions associées
+    interventions = list(db.interventions.find({"clientId": client_id}))
 
-    # Charger les utilisateurs associés au client
+    # Charger les documents et les utilisateurs associés
+    client_doc_manager = ClientDocumentManager(db)
+    documents = client_doc_manager.get_documents_by_client(client_id)
     client_users = list(db.clientUsers.find({"clientId": str(client_id)}))
 
     # Passer les données au template
@@ -52,6 +52,7 @@ def edit_client(db, client_id, username):
         client=client_data,
         documents=documents,
         client_users=client_users,
+        interventions=interventions,
         is_edit=True
     )
 
