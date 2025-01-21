@@ -377,7 +377,22 @@ def list_minio_files():
     except S3Error as e:
         return f"Erreur lors de la récupération des fichiers : {str(e)}", 500
 
+@app.route("/client_dashboard")
+def client_dashboard():
+    client_id = session.get("client_id")
+    if not client_id:
+        return redirect(url_for("client_login"))
 
+    # Récupérer les informations du client
+    client = db.clients.find_one({"_id": ObjectId(client_id)})
+    if not client:
+        return "Client introuvable.", 404
+
+    # Récupérer les documents associés au client
+    client_doc_manager = ClientDocumentManager(db)
+    documents = client_doc_manager.get_documents_by_client(client_id)
+
+    return render_template("client_dashboard.html", client=client, documents=documents)
 @app.route("/client_login", methods=["GET", "POST"])
 def client_login():
     if request.method == "POST":
