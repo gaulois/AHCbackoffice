@@ -1,0 +1,33 @@
+<h4 class="mt-4">Plans d'Étages</h4>
+<div class="mb-3">
+    <label for="image" class="form-label">Sélectionnez une image</label>
+    <input type="file" id="image" name="image" class="form-control" required>
+</div>
+<div class="mb-3">
+    <label for="name" class="form-label">Nom du Plan</label>
+    <input type="text" id="name" name="name" class="form-control" required>
+</div>
+<div class="mb-3">
+    <label for="description" class="form-label">Description</label>
+    <textarea id="description" name="description" class="form-control" rows="3"></textarea>
+</div>
+<button type="submit" formaction="{{ url_for('add_floorplan', client_id=client['_id']) }}" class="btn btn-primary">
+    Ajouter
+</button>
+
+<h5 class="mt-5">Plans d'Étage Existants</h5>
+<ul class="list-group">
+    {% for plan in floorplans %}
+    <li class="list-group-item d-flex justify-content-between align-items-center">
+        <div>
+            <strong>Nom :</strong> {{ plan.name }}
+            <br>
+            <strong>Date ajoutée :</strong> {{ plan.uploadDate if plan.uploadDate else "Non spécifiée" }}
+        </div>
+        <a href="{{ plan.imageUrl }}" target="_blank" class="btn btn-sm btn-secondary">Voir</a>
+    </li>
+    {% endfor %}
+    {% if not floorplans %}
+    <li class="list-group-item text-muted">Aucun plan d'étage trouvé.</li>
+    {% endif %}
+</ul>

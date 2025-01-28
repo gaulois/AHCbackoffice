@@ -23,7 +23,6 @@ def create_client(db, form_data, username):
 
     return client.to_dict()
 
-
 def edit_client(db, client_id, username):
     if request.method == "POST":
         # Charger le client existant pour conserver ses métadonnées
@@ -46,6 +45,9 @@ def edit_client(db, client_id, username):
     documents = client_doc_manager.get_documents_by_client(client_id)
     client_users = list(db.clientUsers.find({"clientId": str(client_id)}))
 
+    # Charger les plans d'étage associés
+    floorplans = list(db.floorPlans.find({"clientId": client_id}))
+
     # Passer les données au template
     return render_template(
         "create_client.html",
@@ -53,6 +55,7 @@ def edit_client(db, client_id, username):
         documents=documents,
         client_users=client_users,
         interventions=interventions,
+        floorplans=floorplans,  # Ajouter les plans d'étage au contexte
         is_edit=True
     )
 

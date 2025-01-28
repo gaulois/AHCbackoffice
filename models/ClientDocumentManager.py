@@ -158,3 +158,5 @@ class ClientDocumentManager:
         except S3Error as e:
             raise ValueError(f"Erreur lors de l'upload vers MinIO : {str(e)}")
 
+
+

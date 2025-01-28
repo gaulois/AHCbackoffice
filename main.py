@@ -13,7 +13,7 @@ from controllers.client_management import create_client, edit_client, create_cli
 from controllers.user_management import create_user
 from models.ClientDocumentManager import ClientDocumentManager
 from models.client import Client
-
+from models.floorplan_model import FloorPlanModel
 from minio.error import S3Error
 from datetime import timedelta
 from zoneinfo import ZoneInfo
@@ -558,6 +558,38 @@ def add_intervention(client_id):
         print(f"Erreur lors de l'ajout de l'intervention : {e}")
         return f"Erreur : {e}", 500
 
+@app.route("/add_floorplan/<client_id>", methods=["POST"])
+def add_floorplan(client_id):
+    """
+    Route pour ajouter un nouveau plan d'étage.
+    """
+    file = request.files.get("image")
+    name = request.form.get("name")
+    description = request.form.get("description")
+
+    if not file or file.filename.strip() == "":
+        return "Erreur : Aucun fichier sélectionné ou nom de fichier invalide.", 400
+
+    if not name:
+        return "Erreur : Le nom du plan est requis.", 400
+
+    # Crée une instance de FloorPlanModel
+    floorplan_model = FloorPlanModel(db)
+
+    try:
+        # Ajouter le plan d'étage et gérer l'upload en même temps
+        floorplan_model.add_floorplan(
+            client_id=client_id,
+            file=file,
+            name=name,
+            description=description,
+            uploaded_by=session["username"]
+        )
+    except Exception as e:
+        return f"Erreur : {e}", 500
+
+    # Rediriger vers la page du client
+    return redirect(url_for("welcome", load=f"edit_client_route={client_id}"))
 
 if __name__ == "__main__":
     app.run(debug=True)

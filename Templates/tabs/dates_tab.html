@@ -1,0 +1,30 @@
+<h4 class="mt-4">Dates d'Intervention</h4>
+<ul class="list-group">
+    {% for intervention in interventions %}
+    <li class="list-group-item d-flex justify-content-between align-items-center">
+        <div>
+            <strong>Date :</strong> {{ intervention.date.strftime('%d/%m/%Y') }}
+            <br>
+            <strong>Description :</strong> {{ intervention.description }}
+        </div>
+    </li>
+    {% endfor %}
+    {% if not interventions %}
+    <li class="list-group-item text-muted">
+        Aucune intervention trouvée pour ce client.
+    </li>
+    {% endif %}
+</ul>
+
+<div class="mt-4">
+    <h5>Ajouter une Nouvelle Intervention</h5>
+    <div class="mb-3">
+        <label for="newInterventionDate" class="form-label">Date d'Intervention</label>
+        <input type="date" id="newInterventionDate" name="newInterventionDate" class="form-control" required>
+    </div>
+    <div class="mb-3">
+        <label for="description" class="form-label">Description</label>
+        <textarea id="description" name="description" class="form-control" rows="3" placeholder="Ajoutez une description (facultatif)"></textarea>
+    </div>
+    <button type="submit" formaction="{{ url_for('add_intervention', client_id=client['_id']) }}" class="btn btn-primary">Ajouter</button>
+</div>
