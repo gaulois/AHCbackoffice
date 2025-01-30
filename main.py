@@ -5,7 +5,7 @@ from bson import ObjectId
 from dotenv import load_dotenv
 from minio import Minio
 from pymongo import MongoClient
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 from initialize_project import login_user, create_initial_admin_user, verify_login
 import bcrypt
 from datetime import datetime
@@ -17,6 +17,7 @@ from models.floorplan_model import FloorPlanModel
 from minio.error import S3Error
 from datetime import timedelta
 from zoneinfo import ZoneInfo
+from models.trap_model import TrapModel
 
 from flask import session, redirect, url_for, render_template, request
 
@@ -590,6 +591,104 @@ def add_floorplan(client_id):
 
     # Rediriger vers la page du client
     return redirect(url_for("welcome", load=f"edit_client_route={client_id}"))
+
+@app.route("/add_trap/<plan_id>", methods=["POST"])
+def add_trap(plan_id):
+    """
+    Route pour ajouter un nouveau piège à un plan d'étage.
+    """
+    trap_model = TrapModel(db)
+    trap_data = {
+        "type": request.form.get("type"),
+        "label": request.form.get("label"),
+        "location": request.form.get("location"),
+        "coordinates": {
+            "x": request.form.get("x"),
+            "y": request.form.get("y")
+        },
+        "barcode": request.form.get("barcode")
+    }
+
+    try:
+        # Ajouter le piège
+        trap_model.add_trap(plan_id, trap_data)
+
+        # Récupérer le `client_id` associé au `plan_id`
+        plan = db.floorPlans.find_one({"_id": ObjectId(plan_id)})
+        if not plan:
+            return "Plan d'étage introuvable", 404
+        client_id = plan["clientId"]
+
+        # Rediriger vers la page d'édition du client
+        return redirect(url_for("welcome", load=f"edit_client_route={client_id}"))
+    except Exception as e:
+        return f"Erreur : {e}", 500
+@app.route("/edit_plan/<plan_id>", methods=["GET"])
+def edit_plan(plan_id):
+    floorplan_model = FloorPlanModel(db)
+    trap_model = TrapModel(db)
+
+    plan = floorplan_model.get_floorplan(plan_id)
+    traps = trap_model.get_traps_by_plan(plan_id)
+
+    return render_template("edit_plan.html", plan=plan, traps=traps)
+
+@app.route("/manage_traps/<plan_id>")
+@login_required
+def manage_traps(plan_id):
+    """
+    Affiche la page pour gérer les pièges sur un plan d'étage.
+    """
+    try:
+        object_id = ObjectId(plan_id)  # Convertir en ObjectId
+    except Exception:
+        return "ID de plan invalide", 400
+
+    # Récupérer le plan et les pièges
+    plan = db.floorPlans.find_one({"_id": object_id})
+    if not plan:
+        return "Plan d'étage introuvable", 404
+
+    traps = list(db.traps.find({"planId": object_id}))
+    for trap in traps:
+        if "coordinates" in trap:
+            trap["coordinates"] = {
+                "x": int(trap["coordinates"]["x"]) if trap["coordinates"]["x"] else 0,
+                "y": int(trap["coordinates"]["y"]) if trap["coordinates"]["y"] else 0
+            }
+
+    # Générer une URL signée pour le plan (si `imagePath` est bien défini)
+    floorplan_model = FloorPlanModel(db)
+    if "imagePath" in plan and plan["imagePath"]:
+        plan["imageUrl"] = floorplan_model.get_signed_url(plan["imagePath"])
+    else:
+        plan["imageUrl"] = None
+
+    print("Image URL:", plan.get("imageUrl"))  # Vérifier si une URL est générée
+
+    return render_template("manage_traps.html", plan=plan, traps=traps)
+@app.route("/save_trap_position", methods=["POST"])
+@login_required
+def save_trap_position():
+    """
+    Enregistre les coordonnées d'un piège sur un plan d'étage.
+    """
+    data = request.get_json()
+    trap_id = data.get("trap_id")
+    x = data.get("x")
+    y = data.get("y")
+
+    if not trap_id or x is None or y is None:
+        return jsonify({"success": False, "error": "Données incomplètes"}), 400
+
+    try:
+        db.traps.update_one(
+            {"_id": ObjectId(trap_id)},
+            {"$set": {"coordinates": {"x": x, "y": y}}}
+        )
+        return jsonify({"success": True}), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 if __name__ == "__main__":
     app.run(debug=True)

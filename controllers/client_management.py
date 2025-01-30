@@ -5,7 +5,7 @@ from models.ClientDocumentManager import ClientDocumentManager
 from bson.objectid import ObjectId
 from datetime import datetime
 import bcrypt
-
+from models.floorplan_model import FloorPlanModel
 
 def create_client(db, form_data, username):
     """
@@ -22,6 +22,8 @@ def create_client(db, form_data, username):
     client.save(db)
 
     return client.to_dict()
+
+from models.trap_model import TrapModel  # Assurez-vous d'importer le modèle Trap
 
 def edit_client(db, client_id, username):
     if request.method == "POST":
@@ -40,13 +42,35 @@ def edit_client(db, client_id, username):
     # Charger les interventions associées
     interventions = list(db.interventions.find({"clientId": client_id}))
 
-    # Charger les documents et les utilisateurs associés
+    # Charger les documents, utilisateurs et plans d'étage associés
     client_doc_manager = ClientDocumentManager(db)
     documents = client_doc_manager.get_documents_by_client(client_id)
     client_users = list(db.clientUsers.find({"clientId": str(client_id)}))
+    from models.floorplan_model import FloorPlanModel  # Assurez-vous d'importer le modèle
 
     # Charger les plans d'étage associés
+    # Charger les plans d'étage associés
+    floorplan_model = FloorPlanModel(db)  # ✅ Instancier le modèle
     floorplans = list(db.floorPlans.find({"clientId": client_id}))
+
+    # Générer des URLs signées et charger les pièges associés
+    for plan in floorplans:
+        plan["traps"] = []
+
+        # ✅ Générer une nouvelle URL signée dynamiquement à chaque affichage
+        if "imagePath" in plan and plan["imagePath"]:
+            plan["imageUrl"] = floorplan_model.get_signed_url(plan["imagePath"])
+
+        # Charger les pièges associés
+        traps = db.traps.find({"planId": plan["_id"]})
+        for trap in traps:
+            # Vérifier et convertir les coordonnées en entiers
+            if "coordinates" in trap:
+                trap["coordinates"] = {
+                    "x": int(trap["coordinates"]["x"]) if isinstance(trap["coordinates"]["x"], (int, str)) else 0,
+                    "y": int(trap["coordinates"]["y"]) if isinstance(trap["coordinates"]["y"], (int, str)) else 0,
+                }
+            plan["traps"].append(trap)
 
     # Passer les données au template
     return render_template(
@@ -55,12 +79,9 @@ def edit_client(db, client_id, username):
         documents=documents,
         client_users=client_users,
         interventions=interventions,
-        floorplans=floorplans,  # Ajouter les plans d'étage au contexte
+        floorplans=floorplans,  # Ajouter les plans d'étage avec leurs pièges
         is_edit=True
     )
-
-
-def delete_client(db, client_id):
     client = Client(client_id=ObjectId(client_id))
     if client.delete(db):
         return jsonify({"message": "Client supprimé avec succès"}), 200

@@ -23,15 +23,25 @@ class FloorPlanModel:
         if not self.minio_client.bucket_exists(self.bucket_name):
             self.minio_client.make_bucket(self.bucket_name)
 
+    def get_signed_url(self, object_name):
+        """
+        Génère une URL signée temporaire pour accéder à un fichier MinIO.
+        :param object_name: Chemin du fichier dans MinIO
+        :return: URL signée temporaire
+        """
+        try:
+            return self.minio_client.presigned_get_object(
+                bucket_name=self.bucket_name,
+                object_name=object_name,
+                expires=timedelta(hours=1)  # URL valable 1 heure
+            )
+        except S3Error as e:
+            print(f"Erreur MinIO : {e}")
+            return None
+
     def add_floorplan(self, client_id, file, name, description, uploaded_by):
         """
-        Ajoute un nouveau plan d'étage pour un client, gérant à la fois l'upload et l'enregistrement des métadonnées.
-
-        :param client_id: ID du client.
-        :param file: Fichier du plan d'étage uploadé via un formulaire.
-        :param name: Nom du plan d'étage.
-        :param description: Description du plan d'étage.
-        :param uploaded_by: Nom ou ID de l'utilisateur ayant effectué l'upload.
+        Ajoute un nouveau plan d'étage pour un client et stocke seulement le chemin du fichier.
         """
         if not file:
             raise ValueError("Aucun fichier reçu pour le plan d'étage.")
@@ -63,7 +73,7 @@ class FloorPlanModel:
                 "clientId": client_id,
                 "name": name,
                 "description": description,
-                "imageUrl": unique_filename,
+                "imagePath": unique_filename,  #  Stocke seulement le chemin
                 "uploadDate": datetime.now(ZoneInfo("Europe/Paris")),
                 "uploadedBy": uploaded_by,
                 "fileName": raw_filename,
@@ -75,7 +85,6 @@ class FloorPlanModel:
 
         except S3Error as e:
             raise ValueError(f"Erreur lors de l'upload du plan d'étage vers MinIO : {str(e)}")
-
     def edit_floorplan(self, plan_id, name, description):
         """Modifie un plan d'étage existant."""
         return self.db.floorPlans.update_one(

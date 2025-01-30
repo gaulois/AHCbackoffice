@@ -84,16 +84,19 @@
         }
     }
 
-        // Fonction pour charger du contenu dynamiquement
         function loadContent(url) {
-            document.getElementById('content-container').innerHTML = ''; // Efface le contenu actuel
-            fetch(url)
-                .then(response => response.text())
-                .then(data => {
-                    document.getElementById('content-container').innerHTML = data;
-                })
-                .catch(error => console.error('Erreur de chargement:', error));
-        }
+    document.getElementById('content-container').innerHTML = ''; // Efface le contenu actuel
+    fetch(url)
+        .then(response => response.text())
+        .then(data => {
+            document.getElementById('content-container').innerHTML = data;
+
+            // 🔥 Déclencher un événement quand une page est chargée dynamiquement
+            const event = new CustomEvent("welcomeContentLoaded", { detail: url });
+            document.dispatchEvent(event);
+        })
+        .catch(error => console.error('Erreur de chargement:', error));
+}
 
         // Fonction pour effacer le contenu et afficher l'accueil
         function clearContent() {
