@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Client Dashboard</title>
+    <!-- Lien vers Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h2 class="text-center">Client Dashboard</h2>
+
+        <!-- Onglet Informations Générales -->
+        <div class="card mt-4">
+            <div class="card-body">
+                <h4>General Information</h4>
+                <p><strong>Company Name:</strong> {{ client.companyName }}</p>
+                <p><strong>Responsible Name:</strong> {{ client.responsible.lastName }} {{ client.responsible.firstName }}</p>
+                <p><strong>Email:</strong> {{ client.email }}</p>
+                <p><strong>Phone:</strong> {{ client.phone }}</p>
+                <p><strong>Mobile (GSM):</strong> {{ client.gsm }}</p>
+                <p><strong>VAT Number:</strong> {{ client.vatNumber }}</p>
+            </div>
+        </div>
+
+        <!-- Onglets pour Adresse de Prestation et Adresse de Facturation -->
+        <ul class="nav nav-tabs mt-4" id="clientTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="treatment-tab" data-bs-toggle="tab" data-bs-target="#treatment" type="button" role="tab" aria-controls="treatment" aria-selected="true">
+                    Treatment Address
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="billing-tab" data-bs-toggle="tab" data-bs-target="#billing" type="button" role="tab" aria-controls="billing" aria-selected="false">
+                    Billing Address
+                </button>
+            </li>
+        </ul>
+
+        <!-- Contenu des onglets -->
+        <div class="tab-content mt-4" id="clientTabsContent">
+            <!-- Onglet Adresse de Prestation -->
+            <div class="tab-pane fade show active" id="treatment" role="tabpanel" aria-labelledby="treatment-tab">
+                <h4>Treatment Address</h4>
+                <p><strong>Place Name:</strong> {{ client.serviceAddress.name }}</p>
+                <p><strong>Address:</strong> {{ client.serviceAddress.address }}</p>
+                <p><strong>Postal Code:</strong> {{ client.serviceAddress.postalCode }}</p>
+                <p><strong>City:</strong> {{ client.serviceAddress.city }}</p>
+                <p><strong>Country:</strong> {{ client.serviceAddress.country }}</p>
+            </div>
+
+            <!-- Onglet Adresse de Facturation -->
+            <div class="tab-pane fade" id="billing" role="tabpanel" aria-labelledby="billing-tab">
+                <h4>Billing Address</h4>
+                <p><strong>Address:</strong> {{ client.billingAddress.address }}</p>
+                <p><strong>Postal Code:</strong> {{ client.billingAddress.postalCode }}</p>
+                <p><strong>City:</strong> {{ client.billingAddress.city }}</p>
+                <p><strong>Country:</strong> {{ client.billingAddress.country }}</p>
+            </div>
+        </div>
+
+        <!-- Bouton de Déconnexion -->
+        <div class="text-center mt-4">
+            <a href="{{ url_for('logout_client') }}" class="btn btn-danger">Log Out</a>
+        </div>
+
+      <!-- Section des documents -->
+<div class="mt-4">
+    <h4>Documents</h4>
+    <ul class="list-group">
+        {% for document in documents %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+                <strong>Type :</strong> {{ document.documentType }}
+                <br>
+                <strong>Nom :</strong> {{ document.fileName }}
+            </div>
+            {% if document.fileUrl %}
+            <a href="{{ document.fileUrl }}" target="_blank" class="btn btn-sm btn-secondary">Voir</a>
+            {% else %}
+            <span class="text-danger">URL non disponible</span>
+            {% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+    </div>
+<BR><BR>
+    <!-- Lien vers Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

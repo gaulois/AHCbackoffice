@@ -1,0 +1,70 @@
+<h4 class="mt-4">Plans d'Étage</h4>
+
+<!-- Ajout d'un nouveau plan d'étage -->
+<div class="mb-3">
+    <label for="image" class="form-label">Sélectionnez une image</label>
+    <input type="file" id="image" name="image" class="form-control">
+</div>
+<div class="mb-3">
+    <label for="name" class="form-label">Nom du Plan</label>
+    <input type="text" id="name" name="name" class="form-control">
+</div>
+<div class="mb-3">
+    <label for="description" class="form-label">Description</label>
+    <textarea id="description" name="description" class="form-control" rows="3"></textarea>
+</div>
+<button type="submit" formaction="{{ url_for('add_floorplan', client_id=client['_id']) }}" class="btn btn-primary">
+    Ajouter
+</button>
+
+<h5 class="mt-5">Plans d'Étage Existants</h5>
+<ul class="list-group">
+    {% for plan in floorplans %}
+    <li class="list-group-item">
+        <div>
+            <strong>Nom :</strong> {{ plan.name }} <br>
+            <strong>Description :</strong> {{ plan.description }} <br>
+            <strong>Date ajoutée :</strong> {{ plan.uploadDate if plan.uploadDate else "Non spécifiée" }}
+        </div>
+
+        <!-- 📌 Affichage du plan d'étage avec canevas pour les pièges -->
+        <div style="position: relative; display: inline-block;">
+            {% if plan.imageUrl %}
+                <img src="{{ plan.imageUrl }}" alt="{{ plan.name }}" id="plan-image-{{ plan._id }}" class="img-fluid" style="max-width: 100%; height: auto;">
+                <canvas id="canvas-{{ plan._id }}" style="position: absolute; top: 0; left: 0;"></canvas>
+            {% else %}
+                <p class="text-danger mt-2">⚠️ Image non disponible</p>
+            {% endif %}
+        </div>
+
+        <!-- 🔧 Bouton pour gérer les pièges -->
+        <a href="{{ url_for('manage_traps', plan_id=plan._id|string) }}" class="btn btn-warning mt-2">
+            Gérer les pièges
+        </a>
+
+        <!-- 📍 Liste des pièges associés au plan -->
+        <h6 class="mt-4">Pièges associés</h6>
+        <ul class="list-group">
+            {% for trap in plan.traps %}
+            <li class="list-group-item">
+                <strong>Type :</strong> {{ trap.type | default("Non spécifié") }} <br>
+                <strong>Libellé :</strong> {{ trap.label | default("Non spécifié") }} <br>
+                <strong>Emplacement :</strong> {{ trap.location | default("Non spécifié") }} <br>
+                {% if trap.coordinates %}
+                <strong>Coordonnées :</strong> ({{ trap.coordinates.x | default("N/A") }}, {{ trap.coordinates.y | default("N/A") }}) <br>
+                {% else %}
+                <span class="text-danger">⛔ Aucune position définie</span>
+                {% endif %}
+                <strong>Code-barre :</strong> {{ trap.barcode | default("Non spécifié") }}
+            </li>
+            {% endfor %}
+            {% if not plan.traps %}
+            <li class="list-group-item text-muted">Aucun piège ajouté.</li>
+            {% endif %}
+        </ul>
+    </li>
+    {% endfor %}
+    {% if not floorplans %}
+    <li class="list-group-item text-muted">Aucun plan d'étage trouvé.</li>
+    {% endif %}
+</ul>

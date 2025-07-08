@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Accueil de l'application</title>
+    <!-- Lien vers Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .sidebar {
+            min-height: 100vh;
+            background-color: #f8f9fa;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar (Navigation Bar) -->
+            <nav class="col-md-3 col-lg-2 d-md-block sidebar">
+                <div class="position-sticky pt-3">
+                    <h4 class="text-center">Menu</h4>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" onclick="loadContent('{{ url_for('create_user_route') }}')">Créer un nouvel utilisateur</a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" onclick="loadContent('{{ url_for('user_list') }}')">Voir la liste des utilisateurs</a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" onclick="loadContent('{{ url_for('create_client_route') }}')">Créer un nouveau client</a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" onclick="loadContent('{{ url_for('client_list') }}')">Voir la liste des clients</a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" onclick="clearContent()">Retour à l'accueil</a>
+                        </li>
+                         <li class="nav-item">
+                            <a href="/logout" class="nav-link" onclick="clearContent()">Logout</a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Contenu principal qui sera remplacé dynamiquement -->
+            <main class="col-md-9 col-lg-10 ms-sm-auto px-md-4">
+                <div id="content-container">
+                    <!-- Contenu par défaut de bienvenue -->
+                    <div class="d-flex justify-content-center align-items-center mt-5">
+                        <h1 class="text-center">{{message}} dans l'application </h1>
+                    </div>
+                    <p class="text-center">Utilisez le menu à gauche pour naviguer dans l'application.</p>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Lien pour Bootstrap 5 JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Script -->
+    <script>
+        // Fonction générique pour confirmer et supprimer
+        function confirmDelete(url) {
+        if (confirm("Êtes-vous sûr de vouloir supprimer ce client ? Cette action est irréversible.")) {
+            fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert("Client supprimé avec succès.");
+                    loadContent('/client_list'); // Recharge la liste des clients
+                } else {
+                    alert("Erreur lors de la suppression du client.");
+                }
+            })
+            .catch(error => console.error("Erreur :", error));
+        }
+    }
+
+        function loadContent(url) {
+    document.getElementById('content-container').innerHTML = ''; // Efface le contenu actuel
+    fetch(url)
+        .then(response => response.text())
+        .then(data => {
+            document.getElementById('content-container').innerHTML = data;
+
+            // 🔥 Déclencher un événement quand une page est chargée dynamiquement
+            const event = new CustomEvent("welcomeContentLoaded", { detail: url });
+            document.dispatchEvent(event);
+        })
+        .catch(error => console.error('Erreur de chargement:', error));
+}
+
+        // Fonction pour effacer le contenu et afficher l'accueil
+        function clearContent() {
+            document.getElementById('content-container').innerHTML = `
+                <div class="d-flex justify-content-center align-items-center mt-5">
+                    <h1 class="text-center">Bienvenue dans l'application</h1>
+                </div>
+                <p class="text-center">Utilisez le menu à gauche pour naviguer dans l'application.</p>
+            `;
+        }
+
+ // Chargement automatique en fonction des paramètres d'URL
+const params = new URLSearchParams(window.location.search);
+const contentToLoad = params.get('load');
+const page = params.get('page') || 1; // Par défaut, la page est 1
+const searchQuery = params.get('search') || ''; // Requête de recherche par défaut vide
+const filterOption = params.get('filter') || ''; // Filtrage par défaut vide
+
+if (contentToLoad === "user_list") {
+    loadContent('{{ url_for('user_list') }}');
+} else if (contentToLoad === "create_user") {
+    loadContent('{{ url_for('create_user_route') }}');
+} else if (contentToLoad === "client_list") {
+    loadContent(`{{ url_for('client_list') }}?page=${page}&search=${searchQuery}&filter=${filterOption}`);
+} else if (contentToLoad === "create_client") {
+    loadContent('{{ url_for('create_client_route') }}');
+} else if (contentToLoad.startsWith("edit_client_route=")) {
+    const clientId = contentToLoad.split("=")[1];
+    loadContent(`{{ url_for('edit_client_route', client_id='') }}${clientId}`);
+}
+    </script>
+
+</body>
+</html>

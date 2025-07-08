@@ -1,0 +1,29 @@
+<h4>Ajouter un Document</h4>
+<div class="mb-3">
+    <label for="documentFile" class="form-label">Sélectionnez un fichier</label>
+    <input type="file" id="documentFile" name="documentFile" class="form-control">
+</div>
+<div class="mb-3">
+    <label for="documentType" class="form-label">Type de Document</label>
+    <select id="documentType" name="documentType" class="form-select" required>
+        <option value="facture">Facture</option>
+        <option value="intervention">Intervention</option>
+        <option value="contrat">Contrat</option>
+        <option value="autre">Autre</option>
+    </select>
+</div>
+<button type="submit" formaction="{{ url_for('upload_document', client_id=client['_id']) }}" class="btn btn-primary">Uploader</button>
+
+<h4 class="mt-5">Documents Associés</h4>
+<ul class="list-group">
+    {% for document in documents %}
+    <li class="list-group-item d-flex justify-content-between align-items-center">
+        <div>
+            <strong>Type :</strong> {{ document.documentType }}
+            <br>
+            <strong>Nom :</strong> {{ document.fileName }}
+        </div>
+        <a href="{{ document.fileUrl }}" target="_blank" class="btn btn-sm btn-secondary">Voir</a>
+    </li>
+    {% endfor %}
+</ul>

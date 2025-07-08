@@ -1,0 +1,44 @@
+<div class="mb-3">
+    <label for="notes" class="form-label">Notes</label>
+    <textarea id="notes" name="notes" class="form-control" rows="5">{{ client.notes if is_edit else '' }}</textarea>
+</div>
+<div class="mb-3">
+    <label for="contractType" class="form-label">Type de contrat</label>
+    <input type="text" id="contractType" name="contractType" class="form-control" value="{{ client.contractType if is_edit else '' }}">
+</div>
+<div class="mb-3">
+    <label for="contractNumber" class="form-label">N° Contrat</label>
+    <input type="text" id="contractNumber" name="contractNumber" class="form-control" value="{{ client.contractNumber if is_edit else '' }}">
+</div>
+<div class="mb-3">
+    <label for="entity" class="form-label">Entité</label>
+    <input type="text" id="entity" name="entity" class="form-control" value="{{ client.entity if is_edit else '' }}">
+</div>
+<div class="mb-3">
+    <label for="infoScanCtr" class="form-label">INFO SCAN CTR</label>
+    <input type="text" id="infoScanCtr" name="infoScanCtr" class="form-control" value="{{ client.infoScanCtr if is_edit else '' }}">
+</div>
+<div class="mb-3">
+    <label for="contractStartDate" class="form-label">Date début du contrat</label>
+    <input type="date" id="contractStartDate" name="contractStartDate" class="form-control" value="{{ client.contractStartDate if is_edit else '' }}">
+</div>
+<div class="mb-3">
+    <label for="contractDuration" class="form-label">Nb de mois du contrat</label>
+    <input type="number" id="contractDuration" name="contractDuration" class="form-control" value="{{ client.contractDuration if is_edit else '' }}">
+</div>
+<div class="mb-3">
+    <label for="accountingEmails" class="form-label">Mails comptabilité</label>
+    <textarea id="accountingEmails" name="accountingEmails" class="form-control">{{ client.accountingEmails | join(', ') if is_edit else '' }}</textarea>
+</div>
+<div class="mb-3">
+    <label for="nbPrestations" class="form-label">Nb de Prestations</label>
+    <input type="number" id="nbPrestations" name="nbPrestations" class="form-control" value="{{ client.nbPrestations if is_edit else '' }}">
+</div>
+<div class="mb-3">
+    <label for="planningInfo" class="form-label">Infos pour plannings</label>
+    <textarea id="planningInfo" name="planningInfo" class="form-control" rows="3">{{ client.planningInfo if is_edit else '' }}</textarea>
+</div>
+<div class="form-check mb-3">
+    <input type="checkbox" id="emailBeforeService" name="emailBeforeService" class="form-check-input" {% if client.emailBeforeService %}checked{% endif %}>
+    <label for="emailBeforeService" class="form-check-label">Mail client avant prestation</label>
+</div>
