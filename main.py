@@ -34,17 +34,14 @@ app.secret_key = os.getenv("SECRET_KEY")
 # Définir l'environnement (DEV pour développement, PROD pour production)
 IS_DEV = os.getenv("ENV", "DEV") == "DEV"
 
-# Configuration des paramètres MongoDB
 if IS_DEV:
     mongo_host = os.getenv("DEV_MONGO_HOST")
     mongo_database = os.getenv("DEV_MONGO_DATABASE")
     mongo_uri = f"mongodb://{mongo_host}/{mongo_database}"
 else:
-    mongo_username = os.getenv("MONGO_USERNAME")
-    mongo_password = os.getenv("MONGO_PASSWORD")
-    mongo_host = os.getenv("PROD_MONGO_HOST")
+    mongo_uri = os.getenv("PROD_MONGO_URI")
     mongo_database = os.getenv("PROD_MONGO_DATABASE")
-    mongo_uri = f"mongodb://{mongo_username}:{mongo_password}@{mongo_host}/{mongo_database}"
+    mongo_uri = os.getenv("PROD_MONGO_URI")
 
 # Connexion à MongoDB
 client = MongoClient(mongo_uri)
@@ -101,12 +98,12 @@ def logout():
     session.pop("user_id", None)  # Efface uniquement les clés d'admi
     return redirect(url_for("login"))
 
+
 @app.route("/logout_client")
 def logout_client():
     session.pop("client_user_id", None)  # Efface uniquement les clés de client
-    session.pop("client_id", None)# Efface toutes les données de session
+    session.pop("client_id", None)  # Efface toutes les données de session
     return redirect(url_for("client_login"))
-
 
 
 @app.route("/welcome")
@@ -149,6 +146,26 @@ def create_user_route():
 
     # Si méthode GET, affiche le formulaire
     return render_template("create_user.html")
+
+
+@app.route("/del_bucket")
+def del_bucket():
+    client = Minio(
+        endpoint="https://minio.ahc-digital.com:9000",
+        access_key="PierreAdmin",
+        secret_key="O36paraf=Oceanweb++76",
+        secure=True
+    )
+
+    bucket_name = "client-documents"
+
+    # Supprimer tous les objets du bucket
+    for obj in client.list_objects(bucket_name, recursive=True):
+        client.remove_object(bucket_name, obj.object_name)
+
+    # Supprimer le bucket
+    client.remove_bucket(bucket_name)
+    print(f"✅ Le bucket '{bucket_name}' a été supprimé.")
 
 
 @app.route("/user_list")
@@ -200,6 +217,8 @@ def create_client_route():
     # Passe un client vide pour la création
     empty_client = Client().to_dict()
     return render_template("create_client.html", client=empty_client, is_edit=False)
+
+
 @app.route("/client_list")
 def client_list():
     page = int(request.args.get('page', 1))  # Page actuelle, par défaut 1
@@ -243,6 +262,8 @@ def client_list():
     total_pages = (total_clients + per_page - 1) // per_page
 
     return render_template("client_list.html", clients=clients, page=page, total_pages=total_pages)
+
+
 @app.route("/edit_client/<client_id>", methods=["GET", "POST"])
 def edit_client_route(client_id):
     return edit_client(db, client_id, session["username"])
@@ -307,6 +328,7 @@ def upload_document(client_id):
     except Exception as e:
         print(f"Erreur lors de l'upload : {e}")
         return f"Erreur : {e}", 400
+
 
 @app.route("/view_document/<document_id>", methods=["GET"])
 def view_document(document_id):
@@ -378,6 +400,7 @@ def list_minio_files():
     except S3Error as e:
         return f"Erreur lors de la récupération des fichiers : {str(e)}", 500
 
+
 @app.route("/client_dashboard")
 def client_dashboard():
     client_id = session.get("client_id")
@@ -393,7 +416,25 @@ def client_dashboard():
     client_doc_manager = ClientDocumentManager(db)
     documents = client_doc_manager.get_documents_by_client(client_id)
 
-    return render_template("client_dashboard.html", client=client, documents=documents)
+    # Récupérer les plans d'étage du client
+    floorplans = list(db.floorPlans.find({"clientId": client_id}))
+    floorplan_model = FloorPlanModel(db)
+
+    for plan in floorplans:
+        if "imagePath" in plan and plan["imagePath"]:
+            plan["imageUrl"] = floorplan_model.get_signed_url(plan["imagePath"])  # Générer URL de l’image
+
+        # Récupérer les pièges associés à ce plan
+        plan["traps"] = list(db.traps.find({"planId": plan["_id"]}))
+
+    return render_template(
+        "client_dashboard.html",
+        client=client,
+        documents=documents,
+        floorplans=floorplans
+    )
+
+
 @app.route("/client_login", methods=["GET", "POST"])
 def client_login():
     if request.method == "POST":
@@ -435,6 +476,7 @@ def create_client_user(client_id):
 
 import re  # Import pour utiliser les expressions régulières
 from datetime import datetime
+
 
 @app.route('/upload_excel', methods=['GET', 'POST'])
 def upload_excel():
@@ -504,8 +546,10 @@ def upload_excel():
                     "infoScanCtr": row.get("INFO SCAN CTR", "") or "",
                     "contractStartDate": contract_start_date,
                     "contractDuration": contract_duration,
-                    "accountingEmails": row.get("mails comptabilité", "").split(",") if row.get("mails comptabilité") else [],
-                    "nbPrestations": int(row.get("Nb de Prestions", 0)) if not pd.isna(row.get("Nb de Prestions")) else 0,
+                    "accountingEmails": row.get("mails comptabilité", "").split(",") if row.get(
+                        "mails comptabilité") else [],
+                    "nbPrestations": int(row.get("Nb de Prestions", 0)) if not pd.isna(
+                        row.get("Nb de Prestions")) else 0,
                     "planningInfo": row.get("INFOS POUR PLANNINGS", "") or "",
                     "emailBeforeService": row.get("MAIL CLIENT AVANT PRESTATION", "") == "on",
                     "user": {
@@ -524,6 +568,7 @@ def upload_excel():
         return redirect(url_for("welcome", load="client_list"))
 
     return render_template('upload_excel.html')
+
 
 @app.route("/add_intervention/<client_id>", methods=["POST"])
 def add_intervention(client_id):
@@ -559,6 +604,7 @@ def add_intervention(client_id):
         print(f"Erreur lors de l'ajout de l'intervention : {e}")
         return f"Erreur : {e}", 500
 
+
 @app.route("/add_floorplan/<client_id>", methods=["POST"])
 def add_floorplan(client_id):
     """
@@ -592,6 +638,7 @@ def add_floorplan(client_id):
     # Rediriger vers la page du client
     return redirect(url_for("welcome", load=f"edit_client_route={client_id}"))
 
+
 @app.route("/add_trap/<plan_id>", methods=["POST"])
 def add_trap(plan_id):
     """
@@ -623,6 +670,8 @@ def add_trap(plan_id):
         return redirect(url_for("welcome", load=f"edit_client_route={client_id}"))
     except Exception as e:
         return f"Erreur : {e}", 500
+
+
 @app.route("/edit_plan/<plan_id>", methods=["GET"])
 def edit_plan(plan_id):
     floorplan_model = FloorPlanModel(db)
@@ -632,6 +681,7 @@ def edit_plan(plan_id):
     traps = trap_model.get_traps_by_plan(plan_id)
 
     return render_template("edit_plan.html", plan=plan, traps=traps)
+
 
 @app.route("/manage_traps/<plan_id>")
 @login_required
@@ -667,6 +717,8 @@ def manage_traps(plan_id):
     print("Image URL:", plan.get("imageUrl"))  # Vérifier si une URL est générée
 
     return render_template("manage_traps.html", plan=plan, traps=traps)
+
+
 @app.route("/save_trap_position", methods=["POST"])
 @login_required
 def save_trap_position():
@@ -689,6 +741,7 @@ def save_trap_position():
         return jsonify({"success": True}), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
 
 if __name__ == "__main__":
     app.run(debug=True)

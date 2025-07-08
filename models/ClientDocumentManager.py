@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from werkzeug.utils import secure_filename
 from bson.objectid import ObjectId
 from zoneinfo import ZoneInfo
-
+from urllib.parse import urlparse
 
 class ClientDocumentManager:
     def __init__(self, db):
@@ -14,11 +14,14 @@ class ClientDocumentManager:
         :param db: Instance de la base de données MongoDB.
         """
         self.db = db
+        endpoint_url = os.getenv("AWS_ENDPOINT_URL")
+        parsed_url = urlparse(endpoint_url)
+
         self.minio_client = Minio(
-            endpoint=os.getenv("AWS_ENDPOINT_URL").replace("http://", ""),
+            endpoint=parsed_url.netloc or parsed_url.path,  # gère les deux formats
             access_key=os.getenv("AWS_ACCESS_KEY_ID"),
             secret_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
-            secure=False  # Désactive SSL pour un environnement local
+            secure=parsed_url.scheme == "https"
         )
         self.bucket_name = os.getenv("AWS_BUCKET_NAME")
 
