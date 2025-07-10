@@ -1,94 +1,149 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Client Dashboard</title>
-    <!-- Lien vers Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet"/>
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans&display=swap" rel="stylesheet"/>
+
+    <style>
+        body {
+            font-family: 'Open Sans', sans-serif;
+            background-color: #f5f7fa;
+            padding-top: 100px;
+        }
+
+        .navbar {
+            background-color: white;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+            padding: 0.75rem 1rem;
+            z-index: 1030;
+        }
+
+        .navbar-brand img {
+            height: 50px;
+        }
+
+        .btn-outline-danger {
+            border-radius: 8px;
+        }
+
+        .card {
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            margin-bottom: 2rem;
+        }
+
+        .tab-content {
+            padding: 1rem;
+            border: 1px solid #dee2e6;
+            border-top: none;
+            border-radius: 0 0 12px 12px;
+            background-color: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+        }
+
+        .nav-tabs .nav-link {
+            border-radius: 12px 12px 0 0;
+        }
+
+        .list-group-item {
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+        }
+    </style>
 </head>
 <body>
-    <div class="container mt-5">
-        <h2 class="text-center">Client Dashboard</h2>
 
-        <!-- Onglet Informations Générales -->
-        <div class="card mt-4">
-            <div class="card-body">
-                <h4>General Information</h4>
-                <p><strong>Company Name:</strong> {{ client.companyName }}</p>
-                <p><strong>Responsible Name:</strong> {{ client.responsible.lastName }} {{ client.responsible.firstName }}</p>
-                <p><strong>Email:</strong> {{ client.email }}</p>
-                <p><strong>Phone:</strong> {{ client.phone }}</p>
-                <p><strong>Mobile (GSM):</strong> {{ client.gsm }}</p>
-                <p><strong>VAT Number:</strong> {{ client.vatNumber }}</p>
+    <!-- Barre de navigation avec logo, titre et bouton déconnexion -->
+    <nav class="navbar fixed-top">
+        <div class="container d-flex justify-content-between align-items-center">
+            <a class="navbar-brand d-flex align-items-center" href="#">
+                <img src="https://all-hygiene-company.be/wp-content/uploads/2022/06/logo-ahc.png" alt="AHC Logo">
+            </a>
+            <div class="d-flex align-items-center gap-3">
+                <span class="navbar-text fw-semibold text-success">Espace CLIENT</span>
+                <a href="{{ url_for('logout_client') }}" class="btn btn-outline-danger btn-sm">
+                    <i class="bi bi-box-arrow-right"></i> Déconnexion
+                </a>
             </div>
         </div>
+    </nav>
 
-        <!-- Onglets pour Adresse de Prestation et Adresse de Facturation -->
-        <ul class="nav nav-tabs mt-4" id="clientTabs" role="tablist">
+    <div class="container">
+        <h2 class="text-center mb-4">Tableau de bord client</h2>
+
+        <!-- Infos générales -->
+        <div class="card p-4">
+            <h4 class="mb-3">Informations générales</h4>
+            <p><strong>Nom de la société :</strong> {{ client.companyName }}</p>
+            <p><strong>Responsable :</strong> {{ client.responsible.lastName }} {{ client.responsible.firstName }}</p>
+            <p><strong>Email :</strong> {{ client.email }}</p>
+            <p><strong>Téléphone :</strong> {{ client.phone }}</p>
+            <p><strong>GSM :</strong> {{ client.gsm }}</p>
+            <p><strong>Numéro de TVA :</strong> {{ client.vatNumber }}</p>
+        </div>
+
+        <!-- Adresses onglets -->
+        <ul class="nav nav-tabs" id="clientTabs" role="tablist">
             <li class="nav-item" role="presentation">
                 <button class="nav-link active" id="treatment-tab" data-bs-toggle="tab" data-bs-target="#treatment" type="button" role="tab" aria-controls="treatment" aria-selected="true">
-                    Treatment Address
+                    Adresse de prestation
                 </button>
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="billing-tab" data-bs-toggle="tab" data-bs-target="#billing" type="button" role="tab" aria-controls="billing" aria-selected="false">
-                    Billing Address
+                    Adresse de facturation
                 </button>
             </li>
         </ul>
 
-        <!-- Contenu des onglets -->
-        <div class="tab-content mt-4" id="clientTabsContent">
-            <!-- Onglet Adresse de Prestation -->
+        <div class="tab-content" id="clientTabsContent">
             <div class="tab-pane fade show active" id="treatment" role="tabpanel" aria-labelledby="treatment-tab">
-                <h4>Treatment Address</h4>
-                <p><strong>Place Name:</strong> {{ client.serviceAddress.name }}</p>
-                <p><strong>Address:</strong> {{ client.serviceAddress.address }}</p>
-                <p><strong>Postal Code:</strong> {{ client.serviceAddress.postalCode }}</p>
-                <p><strong>City:</strong> {{ client.serviceAddress.city }}</p>
-                <p><strong>Country:</strong> {{ client.serviceAddress.country }}</p>
+                <h5 class="mt-3">Adresse de prestation</h5>
+                <p><strong>Lieu :</strong> {{ client.serviceAddress.name }}</p>
+                <p><strong>Adresse :</strong> {{ client.serviceAddress.address }}</p>
+                <p><strong>Code postal :</strong> {{ client.serviceAddress.postalCode }}</p>
+                <p><strong>Ville :</strong> {{ client.serviceAddress.city }}</p>
+                <p><strong>Pays :</strong> {{ client.serviceAddress.country }}</p>
             </div>
-
-            <!-- Onglet Adresse de Facturation -->
             <div class="tab-pane fade" id="billing" role="tabpanel" aria-labelledby="billing-tab">
-                <h4>Billing Address</h4>
-                <p><strong>Address:</strong> {{ client.billingAddress.address }}</p>
-                <p><strong>Postal Code:</strong> {{ client.billingAddress.postalCode }}</p>
-                <p><strong>City:</strong> {{ client.billingAddress.city }}</p>
-                <p><strong>Country:</strong> {{ client.billingAddress.country }}</p>
+                <h5 class="mt-3">Adresse de facturation</h5>
+                <p><strong>Adresse :</strong> {{ client.billingAddress.address }}</p>
+                <p><strong>Code postal :</strong> {{ client.billingAddress.postalCode }}</p>
+                <p><strong>Ville :</strong> {{ client.billingAddress.city }}</p>
+                <p><strong>Pays :</strong> {{ client.billingAddress.country }}</p>
             </div>
         </div>
 
-        <!-- Bouton de Déconnexion -->
-        <div class="text-center mt-4">
-            <a href="{{ url_for('logout_client') }}" class="btn btn-danger">Log Out</a>
+        <!-- Documents -->
+        <div class="card p-4">
+            <h4>Documents</h4>
+            <ul class="list-group mt-2">
+                {% for document in documents %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>Type :</strong> {{ document.documentType }}<br>
+                        <strong>Nom :</strong> {{ document.fileName }}
+                    </div>
+                    {% if document.fileUrl %}
+                    <a href="{{ document.fileUrl }}" target="_blank" class="btn btn-sm btn-secondary">Voir</a>
+                    {% else %}
+                    <span class="text-danger">Non disponible</span>
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
         </div>
-
-      <!-- Section des documents -->
-<div class="mt-4">
-    <h4>Documents</h4>
-    <ul class="list-group">
-        {% for document in documents %}
-        <li class="list-group-item d-flex justify-content-between align-items-center">
-            <div>
-                <strong>Type :</strong> {{ document.documentType }}
-                <br>
-                <strong>Nom :</strong> {{ document.fileName }}
-            </div>
-            {% if document.fileUrl %}
-            <a href="{{ document.fileUrl }}" target="_blank" class="btn btn-sm btn-secondary">Voir</a>
-            {% else %}
-            <span class="text-danger">URL non disponible</span>
-            {% endif %}
-        </li>
-        {% endfor %}
-    </ul>
-</div>
     </div>
-<BR><BR>
-    <!-- Lien vers Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+
+    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
