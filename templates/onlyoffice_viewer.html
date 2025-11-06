@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Éditeur de Document</title>
+  <script type="text/javascript" src="{{ onlyoffice_url }}/web-apps/apps/api/documents/api.js"></script>
+</head>
+<body style="margin:0; padding:0; height:100vh;">
+  <div id="editor" style="width:100%; height:100vh;"></div>
+  <script>
+    const config = {{ config | tojson }};
+    const docEditor = new DocsAPI.DocEditor("editor", {
+      width: "100%",
+      height: "100%",
+      documentType: "word",
+      token: config.token,
+      document: config.document,
+      editorConfig: config.editorConfig
+    });
+  </script>
+</body>
+</html>

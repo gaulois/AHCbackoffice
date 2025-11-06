@@ -21,28 +21,68 @@
 <ul class="list-group">
     {% for plan in floorplans %}
     <li class="list-group-item">
-        <div>
-            <strong>Nom :</strong> {{ plan.name }} <br>
-            <strong>Description :</strong> {{ plan.description }} <br>
-            <strong>Date ajoutée :</strong> {{ plan.uploadDate if plan.uploadDate else "Non spécifiée" }}
-        </div>
+        <div class="d-flex justify-content-between align-items-start flex-wrap">
+            <div class="me-3">
+                <strong>Nom :</strong> {{ plan.name }} <br>
+                <strong>Description :</strong> {{ plan.description }} <br>
+                <strong>Date ajoutée :</strong> {{ plan.uploadDate if plan.uploadDate else "Non spécifiée" }}
+            </div>
 
-        <!-- 📌 Affichage du plan d'étage avec canevas pour les pièges -->
-        <div style="position: relative; display: inline-block;">
+            <!-- Boutons d'action contextuels (à droite du titre) -->
             {% if plan.imageUrl %}
-                <img src="{{ plan.imageUrl }}" alt="{{ plan.name }}" id="plan-image-{{ plan._id }}" class="img-fluid" style="max-width: 100%; height: auto;">
-                <canvas id="canvas-{{ plan._id }}" style="position: absolute; top: 0; left: 0;"></canvas>
-            {% else %}
-                <p class="text-danger mt-2">⚠️ Image non disponible</p>
+                <div class="mt-2">
+                   {% if plan.fileName.endswith('.docx') or plan.fileName.endswith('.doc') %}
+  <!-- Ouvrir dans OnlyOffice -->
+  <a href="{{ url_for('onlyoffice.view_doc', file_url=plan.imageUrl, file_name=plan.fileName) }}"
+     target="_blank" class="btn btn-info me-2 mb-2">
+    📝 Ouvrir dans OnlyOffice
+  </a>
+
+  <!-- Télécharger (presigné côté serveur) -->
+  <a href="{{ url_for('downloads.download_floorplan', key=plan.imagePath, name=plan.fileName) }}"
+     class="btn btn-outline-secondary mb-2">
+    ⬇️ Télécharger
+  </a>
+{% elif plan.fileName.endswith('.pdf') %}
+  <!-- Voir PDF dans le navigateur -->
+  <a href="{{ plan.imageUrl }}" target="_blank" class="btn btn-outline-primary mb-2">
+    👁️ Voir
+  </a>
+{% endif %}
+                </div>
             {% endif %}
         </div>
 
-        <!-- 🔧 Bouton pour gérer les pièges -->
-        <a href="{{ url_for('manage_traps', plan_id=plan._id|string) }}" class="btn btn-warning mt-2">
-            Gérer les pièges
-        </a>
+        <!-- 📌 Affichage du plan d'étage -->
+        <div style="position: relative; display: block; width: 100%;">
+            {% if plan.imageUrl %}
+                {% if plan.fileName.endswith('.pdf') %}
+                    <!-- 📄 PDF en grand format -->
+                    <iframe
+                        src="{{ plan.imageUrl }}#zoom=page-width"
+                        style="width: 100%; height: 80vh; border: 1px solid #ccc; border-radius: 6px;"
+                        loading="lazy">
+                    </iframe>
 
-        <!-- 📍 Liste des pièges associés au plan -->
+                {% elif plan.fileName.endswith('.png') or plan.fileName.endswith('.jpg') or plan.fileName.endswith('.jpeg') %}
+                    <!-- 🖼️ Image + canevas -->
+                    <img src="{{ plan.imageUrl }}" alt="{{ plan.name }}" id="plan-image-{{ plan._id }}"
+                         class="img-fluid" style="max-width: 100%; height: auto;">
+                    <canvas id="canvas-{{ plan._id }}" style="position: absolute; top: 0; left: 0;"></canvas>
+
+                {% elif plan.fileName.endswith('.docx') or plan.fileName.endswith('.doc') %}
+                    <!-- Pour Word, on n’intègre pas l’aperçu ici : boutons ci-dessus -->
+                    <p class="text-muted mt-2"><em>Document Word — utilisez les boutons ci-dessus.</em></p>
+
+                {% else %}
+                    <p class="text-muted mt-2">Type de fichier non pris en charge pour l’aperçu.</p>
+                {% endif %}
+            {% else %}
+                <p class="text-danger mt-2">⚠️ Fichier non disponible</p>
+            {% endif %}
+        </div>
+
+        <!-- 📍 Liste des pièges associés -->
         <h6 class="mt-4">Pièges associés</h6>
         <ul class="list-group">
             {% for trap in plan.traps %}

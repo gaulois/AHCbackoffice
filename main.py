@@ -23,12 +23,17 @@ from flask import session, redirect, url_for, render_template, request
 
 from functools import wraps
 from flask import redirect, url_for, session
+from routes.onlyoffice_routes import onlyoffice_bp
+from routes.downloads import downloads_bp
+
 
 # Charger les variables d'environnement
 load_dotenv()
 
 # Initialiser l'application Flask
 app = Flask(__name__)
+app.register_blueprint(onlyoffice_bp)
+app.register_blueprint(downloads_bp)
 app.secret_key = os.getenv("SECRET_KEY")
 
 # Définir l'environnement (DEV pour développement, PROD pour production)

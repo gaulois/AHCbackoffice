@@ -38,3 +38,9 @@ tzdata==2024.2
 urllib3==2.2.1
 watchdog==3.0.0
 Werkzeug==2.2.2
+
+django-qrcode~=0.3
+qrcode~=8.2
+PyJWT~=2.10.1minio
+PyJWT
+python-dotenv
