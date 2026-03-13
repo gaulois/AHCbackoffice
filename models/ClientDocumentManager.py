@@ -30,14 +30,22 @@ class ClientDocumentManager:
             self.minio_client.make_bucket(self.bucket_name)
 
     def get_documents_by_client(self, client_id):
-        """
-        Récupère tous les documents associés à un client.
-        :param client_id: ID du client.
-        :return: Liste des documents avec des URL signées pour chaque document.
-        """
         documents = list(self.db.clientDocuments.find({"clientId": client_id}))
+
         for document in documents:
-            document["fileUrl"] = self.generate_presigned_url(document["filePath"])
+            try:
+                file_path = document.get("filePath") or document.get("objectPath")
+
+                if file_path:
+                    document["fileUrl"] = self.generate_presigned_url(file_path)
+                else:
+                    document["fileUrl"] = None
+                    print(f"⚠️ Aucun chemin de fichier trouvé pour le document {document.get('_id')}")
+            except Exception as e:
+                print(
+                    f"Erreur lors de la génération de l'URL signée pour {document.get('filePath') or document.get('objectPath')}: {e}")
+                document["fileUrl"] = None
+
         return documents
 
     def delete_document(self, document_id):

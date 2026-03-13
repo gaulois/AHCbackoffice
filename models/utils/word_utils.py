@@ -2,38 +2,75 @@ import io
 import tempfile
 from docx import Document
 from docx.shared import Inches
+from docx.enum.table import WD_TABLE_ALIGNMENT
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.shared import Pt
 
 def add_qr_to_word(input_file_stream, qr_bytes, client_id):
     """
-    Insère un QR code en haut à droite d’un document Word (.docx)
-    et renvoie un flux binaire prêt à être uploadé dans MinIO.
+    Insère un QR code dans un tableau à 2 colonnes du pied de page :
+    - colonne gauche : QR code
+    - colonne droite : contenu existant du pied de page
+
+    Renvoie un flux binaire prêt à être uploadé dans MinIO.
     """
-    # Crée un fichier temporaire pour sauvegarder le Word original
+    # Sauvegarde temporaire du fichier Word original
     with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp_file:
         tmp_file.write(input_file_stream.read())
         tmp_file_path = tmp_file.name
 
-    # Ouvre le document Word
+    # Ouvre le document
     doc = Document(tmp_file_path)
 
-    # Crée une section si nécessaire (utile pour forcer le QR en haut)
+    # Utilise la première section
     section = doc.sections[0]
-    header = section.header
-    paragraph = header.paragraphs[0] if header.paragraphs else header.add_paragraph()
+    footer = section.footer
+
+    # Récupère le texte existant du footer
+    existing_text_lines = []
+    for p in footer.paragraphs:
+        txt = p.text.strip()
+        if txt:
+            existing_text_lines.append(txt)
+
+    existing_text = "\n".join(existing_text_lines)
+
+    # Supprime le contenu existant du footer
+    # (python-docx ne propose pas de clear() direct, donc on vide les paragraphes)
+    for p in footer.paragraphs:
+        p._element.getparent().remove(p._element)
+
+    # Crée un tableau 1 ligne / 2 colonnes dans le footer
+    table = footer.add_table(rows=1, cols=2, width=Inches(6.5))
+    table.alignment = WD_TABLE_ALIGNMENT.LEFT
+
+    row = table.rows[0]
+    left_cell = row.cells[0]
+    right_cell = row.cells[1]
+
+    # Largeurs visuelles approximatives
+    left_cell.width = Inches(1.2)
+    right_cell.width = Inches(5.3)
 
     # Crée une image temporaire du QR
     qr_temp = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
     qr_temp.write(qr_bytes.getvalue())
     qr_temp.close()
 
-    # Ajoute le QR dans l'en-tête du document (toujours visible en haut à droite)
-    run = paragraph.add_run()
-    run.add_picture(qr_temp.name, width=Inches(1.2))
+    # Colonne gauche : QR
+    left_paragraph = left_cell.paragraphs[0]
+    left_paragraph.alignment = WD_ALIGN_PARAGRAPH.LEFT
+    left_run = left_paragraph.add_run()
+    left_run.add_picture(qr_temp.name, width=Inches(0.9))
 
-    # Aligne le QR à droite
-    paragraph.alignment = 2  # 0=left, 1=center, 2=right
+    # Colonne droite : texte existant
+    right_paragraph = right_cell.paragraphs[0]
+    right_paragraph.alignment = WD_ALIGN_PARAGRAPH.LEFT
+    if existing_text:
+        right_run = right_paragraph.add_run(existing_text)
+        right_run.font.size = Pt(9)
 
-    # Sauvegarde le nouveau document dans un flux mémoire
+    # Sauvegarde du document modifié
     output_stream = io.BytesIO()
     doc.save(output_stream)
     output_stream.seek(0)

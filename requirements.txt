@@ -42,3 +42,6 @@ tzdata==2024.2
 urllib3==2.2.1
 watchdog==3.0.0
 Werkzeug==2.2.2
+pdf2image
+pyzbar
+Pillow
