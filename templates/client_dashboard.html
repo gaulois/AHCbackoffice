@@ -1,149 +1,579 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Client Dashboard</title>
+    <meta charset="UTF-8">
+    <title>Espace Client - {{ client.companyName if client.companyName else "Client" }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
-    <!-- Bootstrap Icons -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet"/>
-    <!-- Google Font -->
-    <link href="https://fonts.googleapis.com/css2?family=Open+Sans&display=swap" rel="stylesheet"/>
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+    >
 
     <style>
         body {
-            font-family: 'Open Sans', sans-serif;
-            background-color: #f5f7fa;
-            padding-top: 100px;
+            background: #f4f7fb;
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            color: #1f2937;
         }
 
-        .navbar {
-            background-color: white;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-            padding: 0.75rem 1rem;
-            z-index: 1030;
+       .hero-card {
+    background: linear-gradient(135deg, #c30928, #E51F2C);
+    color: white;
+    border: none;
+    border-radius: 20px;
+    box-shadow: 0 12px 30px rgba(195, 9, 40, 0.22);
+}
+
+        .hero-subtitle {
+            color: rgba(255,255,255,0.88);
         }
 
-        .navbar-brand img {
-            height: 50px;
+        .hero-pill {
+            display: inline-block;
+            background: rgba(255,255,255,0.14);
+            border: 1px solid rgba(255,255,255,0.22);
+            padding: 7px 12px;
+            border-radius: 999px;
+            font-size: 0.92rem;
+            margin-right: 8px;
+            margin-bottom: 8px;
         }
 
-        .btn-outline-danger {
-            border-radius: 8px;
+    .hero-logo {
+    width: 120px;              /* largeur du bloc */
+    height: 70px;              /* hauteur contrôlée */
+    border-radius: 12px;
+    background: rgba(255,255,255,0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+    margin-right: 10px;        /* espace avec le texte */
+    margin-left: 10px;         /* 👉 décale vers la droite */
+}
+
+.hero-logo-img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.hero-logo-img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+        .stats-card {
+            border: none;
+            border-radius: 18px;
+            box-shadow: 0 6px 22px rgba(17, 24, 39, 0.06);
+            background: white;
         }
 
-        .card {
+        .stats-label {
+            color: #6b7280;
+            font-size: 0.95rem;
+        }
+
+        .stats-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .content-card {
+            border: none;
+            border-radius: 18px;
+            box-shadow: 0 6px 22px rgba(17, 24, 39, 0.06);
+            background: white;
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .mini-muted {
+            color: #6b7280;
+            font-size: 0.92rem;
+        }
+
+        .nav-pills .nav-link {
+            border-radius: 999px;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .nav-pills .nav-link.active {
+    background-color: #c30928;
+}
+
+        .document-row,
+        .plan-card {
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+            background: white;
+            transition: 0.2s ease;
+        }
+
+        .document-row:hover,
+.plan-card:hover {
+    border-color: #f0a3ad;
+    box-shadow: 0 8px 20px rgba(195, 9, 40, 0.08);
+}
+
+        .doc-title {
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .doc-meta {
+            color: #6b7280;
+            font-size: 0.92rem;
+        }
+
+        .doc-badge {
+            font-size: 0.78rem;
+            font-weight: 600;
+            border-radius: 999px;
+            padding: 6px 10px;
+        }
+
+        .preview-box {
+            background: #f8fafc;
+            border: 1px dashed #d1d5db;
             border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-            margin-bottom: 2rem;
+            min-height: 180px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6b7280;
+            text-align: center;
+            padding: 20px;
         }
 
-        .tab-content {
-            padding: 1rem;
-            border: 1px solid #dee2e6;
-            border-top: none;
-            border-radius: 0 0 12px 12px;
-            background-color: white;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+        .footer-note {
+            color: #6b7280;
+            font-size: 0.9rem;
         }
+        .btn-primary {
+    background-color: #c30928;
+    border-color: #c30928;
+}
 
-        .nav-tabs .nav-link {
-            border-radius: 12px 12px 0 0;
-        }
+.btn-primary:hover,
+.btn-primary:focus {
+    background-color: #E51F2C;
+    border-color: #E51F2C;
+}
 
-        .list-group-item {
-            border-radius: 8px;
-            margin-bottom: 0.5rem;
-        }
+.btn-outline-primary {
+    color: #c30928;
+    border-color: #c30928;
+}
+
+.btn-outline-primary:hover,
+.btn-outline-primary:focus {
+    background-color: #c30928;
+    border-color: #c30928;
+    color: white;
+}
+        .badge-intervention {
+    background-color: #c30928;
+    color: white;
+}
+
+.badge-facture {
+    background-color: #198754;
+    color: white;
+}
+
+.badge-contrat {
+    background-color: #f59e0b;
+    color: white;
+}
+
+.badge-autre {
+    background-color: #6b7280;
+    color: white;
+}
+
+        .hero-logo {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    backdrop-filter: blur(4px);
+}
     </style>
 </head>
 <body>
 
-    <!-- Barre de navigation avec logo, titre et bouton déconnexion -->
-    <nav class="navbar fixed-top">
-        <div class="container d-flex justify-content-between align-items-center">
-            <a class="navbar-brand d-flex align-items-center" href="#">
-                <img src="https://all-hygiene-company.be/wp-content/uploads/2022/06/logo-ahc.png" alt="AHC Logo">
-            </a>
-            <div class="d-flex align-items-center gap-3">
-                <span class="navbar-text fw-semibold text-success">Espace CLIENT</span>
-                <a href="{{ url_for('logout_client') }}" class="btn btn-outline-danger btn-sm">
-                    <i class="bi bi-box-arrow-right"></i> Déconnexion
-                </a>
-            </div>
-        </div>
-    </nav>
+<div class="container py-4 py-lg-5">
 
-    <div class="container">
-        <h2 class="text-center mb-4">Tableau de bord client</h2>
-
-        <!-- Infos générales -->
-        <div class="card p-4">
-            <h4 class="mb-3">Informations générales</h4>
-            <p><strong>Nom de la société :</strong> {{ client.companyName }}</p>
-            <p><strong>Responsable :</strong> {{ client.responsible.lastName }} {{ client.responsible.firstName }}</p>
-            <p><strong>Email :</strong> {{ client.email }}</p>
-            <p><strong>Téléphone :</strong> {{ client.phone }}</p>
-            <p><strong>GSM :</strong> {{ client.gsm }}</p>
-            <p><strong>Numéro de TVA :</strong> {{ client.vatNumber }}</p>
-        </div>
-
-        <!-- Adresses onglets -->
-        <ul class="nav nav-tabs" id="clientTabs" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="treatment-tab" data-bs-toggle="tab" data-bs-target="#treatment" type="button" role="tab" aria-controls="treatment" aria-selected="true">
-                    Adresse de prestation
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="billing-tab" data-bs-toggle="tab" data-bs-target="#billing" type="button" role="tab" aria-controls="billing" aria-selected="false">
-                    Adresse de facturation
-                </button>
-            </li>
-        </ul>
-
-        <div class="tab-content" id="clientTabsContent">
-            <div class="tab-pane fade show active" id="treatment" role="tabpanel" aria-labelledby="treatment-tab">
-                <h5 class="mt-3">Adresse de prestation</h5>
-                <p><strong>Lieu :</strong> {{ client.serviceAddress.name }}</p>
-                <p><strong>Adresse :</strong> {{ client.serviceAddress.address }}</p>
-                <p><strong>Code postal :</strong> {{ client.serviceAddress.postalCode }}</p>
-                <p><strong>Ville :</strong> {{ client.serviceAddress.city }}</p>
-                <p><strong>Pays :</strong> {{ client.serviceAddress.country }}</p>
-            </div>
-            <div class="tab-pane fade" id="billing" role="tabpanel" aria-labelledby="billing-tab">
-                <h5 class="mt-3">Adresse de facturation</h5>
-                <p><strong>Adresse :</strong> {{ client.billingAddress.address }}</p>
-                <p><strong>Code postal :</strong> {{ client.billingAddress.postalCode }}</p>
-                <p><strong>Ville :</strong> {{ client.billingAddress.city }}</p>
-                <p><strong>Pays :</strong> {{ client.billingAddress.country }}</p>
-            </div>
-        </div>
-
-        <!-- Documents -->
-        <div class="card p-4">
-            <h4>Documents</h4>
-            <ul class="list-group mt-2">
-                {% for document in documents %}
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    <div>
-                        <strong>Type :</strong> {{ document.documentType }}<br>
-                        <strong>Nom :</strong> {{ document.fileName }}
+    <!-- HERO -->
+    <div class="card hero-card mb-4">
+        <div class="card-body p-4 p-lg-5">
+            <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start gap-4">
+                <div>
+                  <div class="d-flex align-items-center gap-4 mb-3" style="margin-left: 10px;">
+                       <div class="hero-logo">
+    <img src="https://all-hygiene-company.be/wp-content/uploads/2022/06/logo-ahc.png"
+         alt="AHC Logo"
+         class="hero-logo-img">
+</div>
+                        <div>
+                            <h1 class="h3 mb-1">Bienvenue dans votre espace client</h1>
+                            <div class="hero-subtitle">
+                                Consultez vos documents, plans et informations utiles en toute simplicité.
+                            </div>
+                        </div>
                     </div>
-                    {% if document.fileUrl %}
-                    <a href="{{ document.fileUrl }}" target="_blank" class="btn btn-sm btn-secondary">Voir</a>
-                    {% else %}
-                    <span class="text-danger">Non disponible</span>
+
+                    <h2 class="h4 mb-3">{{ client.companyName if client.companyName else "Client" }}</h2>
+
+                    <div class="hero-pill">
+                        Responsable :
+                        {{ client.responsible.firstName if client.responsible and client.responsible.firstName else "" }}
+                        {{ client.responsible.lastName if client.responsible and client.responsible.lastName else "" }}
+                    </div>
+
+                    {% if client.email %}
+                    <div class="hero-pill">{{ client.email }}</div>
                     {% endif %}
-                </li>
-                {% endfor %}
-            </ul>
+
+                    {% if client.phone %}
+                    <div class="hero-pill">{{ client.phone }}</div>
+                    {% endif %}
+
+                    {% if client.serviceAddress %}
+                    <div class="hero-pill">
+                        Site :
+                        {{ client.serviceAddress.treatmentPlaceName if client.serviceAddress.treatmentPlaceName else "" }}
+                        {% if client.serviceAddress.city %} - {{ client.serviceAddress.city }}{% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="text-lg-end">
+                    <div class="hero-subtitle mb-2">Portail sécurisé</div>
+                    <div class="fw-semibold">All Hygiene Company</div>
+                    <div class="hero-subtitle">Documents & suivi client</div>
+                    <a href="{{ url_for('logout_client') }}" class="btn btn-light btn-sm mt-3">
+                        Déconnexion
+                    </a>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- STATS -->
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-md-6 col-xl-3">
+            <div class="card stats-card h-100">
+                <div class="card-body">
+                    <div class="stats-label">Documents disponibles</div>
+                    <div class="stats-value">{{ documents|length }}</div>
+                    <div class="mini-muted">Tous types confondus</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-6 col-xl-3">
+            <div class="card stats-card h-100">
+                <div class="card-body">
+                    <div class="stats-label">Plans disponibles</div>
+                    <div class="stats-value">{{ floorplans|length }}</div>
+                    <div class="mini-muted">Plans et supports techniques</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-6 col-xl-3">
+            <div class="card stats-card h-100">
+                <div class="card-body">
+                    <div class="stats-label">Interventions</div>
+                    <div class="stats-value">
+                        {{
+                            (
+                                documents
+                                | selectattr('documentType', 'defined')
+                                | selectattr('documentType', 'equalto', 'intervention')
+                                | list
+                                | length
+                            )
+                            +
+                            (
+                                documents
+                                | selectattr('docType', 'defined')
+                                | selectattr('docType', 'equalto', 'intervention')
+                                | list
+                                | length
+                            )
+                        }}
+                    </div>
+                    <div class="mini-muted">Documents d’intervention</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-6 col-xl-3">
+            <div class="card stats-card h-100">
+                <div class="card-body">
+                    <div class="stats-label">Documents administratifs</div>
+                    <div class="stats-value">
+                        {{
+                            (
+                                documents
+                                | selectattr('documentType', 'defined')
+                                | selectattr('documentType', 'in', ['facture', 'contrat'])
+                                | list
+                                | length
+                            )
+                            +
+                            (
+                                documents
+                                | selectattr('docType', 'defined')
+                                | selectattr('docType', 'in', ['facture', 'contrat'])
+                                | list
+                                | length
+                            )
+                        }}
+                    </div>
+                    <div class="mini-muted">Factures et contrats</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="card content-card">
+        <div class="card-body p-3 p-lg-4">
+
+            <ul class="nav nav-pills mb-4" id="clientTabs" role="tablist">
+                <li class="nav-item me-2 mb-2" role="presentation">
+                    <button class="nav-link active" id="documents-tab" data-bs-toggle="pill"
+                            data-bs-target="#documents-pane" type="button" role="tab">
+                        Documents
+                    </button>
+                </li>
+                <li class="nav-item me-2 mb-2" role="presentation">
+                    <button class="nav-link" id="plans-tab" data-bs-toggle="pill"
+                            data-bs-target="#plans-pane" type="button" role="tab">
+                        Plans
+                    </button>
+                </li>
+                <li class="nav-item me-2 mb-2" role="presentation">
+                    <button class="nav-link" id="infos-tab" data-bs-toggle="pill"
+                            data-bs-target="#infos-pane" type="button" role="tab">
+                        Informations
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content">
+
+                <!-- DOCUMENTS -->
+                <div class="tab-pane fade show active" id="documents-pane" role="tabpanel">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                        <div class="section-title">Vos documents</div>
+                        <div class="mini-muted">Tous vos documents accessibles en ligne</div>
+                    </div>
+
+                    {% if documents %}
+                        <div class="d-flex flex-column gap-3">
+                            {% for document in documents %}
+                                {% set current_type = document.documentType if document.documentType is defined and document.documentType else (document.docType if document.docType is defined else 'autre') %}
+
+                                <div class="document-row p-3">
+                                    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start gap-3">
+                                        <div class="flex-grow-1">
+                                            <div class="d-flex align-items-center gap-2 flex-wrap mb-2">
+                                                <span class="doc-title">
+                                                    {{ document.fileName if document.fileName else "Document sans nom" }}
+                                                </span>
+
+                                                {% if current_type == "intervention" %}
+    <span class="badge doc-badge badge-intervention">Intervention</span>
+{% elif current_type == "facture" %}
+    <span class="badge doc-badge badge-facture">Facture</span>
+{% elif current_type == "contrat" %}
+    <span class="badge doc-badge badge-contrat">Contrat</span>
+{% else %}
+    <span class="badge doc-badge badge-autre">{{ current_type }}</span>
+{% endif %}
+                                            <div class="doc-meta">
+                                                {% if document.uploadDate %}
+                                                    Ajouté le :
+                                                    {{ document.uploadDate.strftime('%d/%m/%Y') if document.uploadDate.strftime else document.uploadDate }}
+                                                {% else %}
+                                                    Date non disponible
+                                                {% endif %}
+                                            </div>
+
+                                            {% if document.interventionDate %}
+                                                <div class="doc-meta">
+                                                    Date d’intervention : {{ document.interventionDate }}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+
+                                        <div class="d-flex flex-wrap gap-2">
+                                            {% if document.fileUrl %}
+                                                <a href="{{ document.fileUrl }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                                    Voir
+                                                </a>
+                                                <a href="{{ document.fileUrl }}" target="_blank" class="btn btn-primary btn-sm">
+                                                    Télécharger
+                                                </a>
+                                            {% else %}
+                                                <span class="text-danger small">Fichier indisponible</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="preview-box">
+                            Aucun document n’est actuellement disponible dans votre espace client.
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- PLANS -->
+                <div class="tab-pane fade" id="plans-pane" role="tabpanel">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                        <div class="section-title">Plans & documents techniques</div>
+                        <div class="mini-muted">Consultez les plans mis à votre disposition</div>
+                    </div>
+
+                    {% if floorplans %}
+                        <div class="row g-3">
+                            {% for plan in floorplans %}
+                                <div class="col-12 col-lg-6">
+                                    <div class="plan-card p-3 h-100">
+                                        <div class="d-flex flex-column h-100">
+                                            <div class="mb-2">
+                                                <div class="doc-title">
+                                                    {{ plan.name if plan.name else "Plan sans nom" }}
+                                                </div>
+                                                <div class="doc-meta">
+                                                    {{ plan.description if plan.description else "Aucune description" }}
+                                                </div>
+                                            </div>
+
+                                            <div class="preview-box mb-3">
+                                                {% if plan.imageUrl %}
+                                                    {% if plan.fileName and plan.fileName.endswith('.pdf') %}
+                                                        <iframe
+                                                            src="{{ plan.imageUrl }}#zoom=page-width"
+                                                            style="width: 100%; height: 280px; border: none; border-radius: 10px;">
+                                                        </iframe>
+                                                    {% elif plan.fileName and (plan.fileName.endswith('.png') or plan.fileName.endswith('.jpg') or plan.fileName.endswith('.jpeg')) %}
+                                                        <img src="{{ plan.imageUrl }}" alt="{{ plan.name }}"
+                                                             class="img-fluid rounded" style="max-height: 260px;">
+                                                    {% else %}
+                                                        <div>Document disponible</div>
+                                                    {% endif %}
+                                                {% else %}
+                                                    Aperçu indisponible
+                                                {% endif %}
+                                            </div>
+
+                                            <div class="mt-auto d-flex flex-wrap gap-2">
+                                                {% if plan.imageUrl %}
+                                                    <a href="{{ plan.imageUrl }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                                        Voir
+                                                    </a>
+                                                    <a href="{{ plan.imageUrl }}" target="_blank" class="btn btn-primary btn-sm">
+                                                        Télécharger
+                                                    </a>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="preview-box">
+                            Aucun plan n’est actuellement disponible.
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- INFOS -->
+                <div class="tab-pane fade" id="infos-pane" role="tabpanel">
+                    <div class="section-title mb-3">Informations du site</div>
+
+                    <div class="row g-3">
+                        <div class="col-12 col-lg-6">
+                            <div class="card border-0 bg-light h-100">
+                                <div class="card-body">
+                                    <h6 class="fw-bold mb-3">Coordonnées société</h6>
+                                    <p class="mb-2"><strong>Société :</strong> {{ client.companyName if client.companyName else "-" }}</p>
+                                    <p class="mb-2">
+                                        <strong>Responsable :</strong>
+                                        {{ client.responsible.firstName if client.responsible and client.responsible.firstName else "" }}
+                                        {{ client.responsible.lastName if client.responsible and client.responsible.lastName else "" }}
+                                    </p>
+                                    <p class="mb-2"><strong>Email :</strong> {{ client.email if client.email else "-" }}</p>
+                                    <p class="mb-2"><strong>Téléphone :</strong> {{ client.phone if client.phone else "-" }}</p>
+                                    <p class="mb-0"><strong>GSM :</strong> {{ client.gsm if client.gsm else "-" }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-lg-6">
+                            <div class="card border-0 bg-light h-100">
+                                <div class="card-body">
+                                    <h6 class="fw-bold mb-3">Adresse d’intervention</h6>
+
+                                    {% if client.serviceAddress %}
+                                        <p class="mb-2">
+                                            <strong>Lieu :</strong>
+                                            {{ client.serviceAddress.treatmentPlaceName if client.serviceAddress.treatmentPlaceName else "-" }}
+                                        </p>
+                                        <p class="mb-2">
+                                            <strong>Adresse :</strong>
+                                            {{ client.serviceAddress.address if client.serviceAddress.address else "-" }}
+                                        </p>
+                                        <p class="mb-2">
+                                            <strong>Code postal :</strong>
+                                            {{ client.serviceAddress.postalCode if client.serviceAddress.postalCode else "-" }}
+                                        </p>
+                                        <p class="mb-0">
+                                            <strong>Ville :</strong>
+                                            {{ client.serviceAddress.city if client.serviceAddress.city else "-" }}
+                                        </p>
+                                    {% else %}
+                                        <p class="mb-0">Aucune information d’adresse disponible.</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if client.notes %}
+                        <div class="card border-0 bg-light mt-3">
+                            <div class="card-body">
+                                <h6 class="fw-bold mb-3">Notes</h6>
+                                <div>{{ client.notes }}</div>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="text-center mt-4 footer-note">
+        Espace client sécurisé – All Hygiene Company
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
