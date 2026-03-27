@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from minio import Minio
 from pymongo import MongoClient
 from flask import Flask, render_template, request, redirect, url_for, jsonify
-from initialize_project import login_user, create_initial_admin_user, verify_login
+from initialize_project import login_user, create_initial_admin_user
 import bcrypt
 from datetime import datetime
 from controllers.client_management import create_client, edit_client, create_client_user_c
@@ -21,11 +21,10 @@ from models.trap_model import TrapModel
 
 from flask import session, redirect, url_for, render_template, request
 
-from functools import wraps
-from flask import redirect, url_for, session
 from routes.onlyoffice_routes import onlyoffice_bp
 from routes.downloads import downloads_bp
 from routes.ingest import ingest_bp
+from routes.auth import auth_bp, login_required
 
 # Charger les variables d'environnement
 load_dotenv()
@@ -35,6 +34,7 @@ app = Flask(__name__)
 app.register_blueprint(onlyoffice_bp)
 app.register_blueprint(downloads_bp)
 app.register_blueprint(ingest_bp)
+app.register_blueprint(auth_bp)
 app.secret_key = os.getenv("SECRET_KEY")
 
 # Définir l'environnement (DEV pour développement, PROD pour production)
@@ -64,53 +64,10 @@ def home():
     # Vérifier si la collection userInternet existe
     if "userInternet" in db.list_collection_names():
         # Rediriger vers la page de login si la collection existe
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
     else:
         # Demander la création de l'admin si la collection n'existe pas
         return "Veuillez initialiser l'administrateur dans MongoDB."
-
-
-def login_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if "user_id" not in session:  # Vérifie si la session contient un utilisateur
-            return redirect(url_for("login"))  # Redirige vers la page de connexion
-        return f(*args, **kwargs)
-
-    return decorated_function
-
-
-@app.route("/login", methods=["GET", "POST"])
-def login():
-    if request.method == "POST":
-        username = request.form["username"]
-        password = request.form["password"]
-
-        # Vérification des informations de connexion
-        if verify_login(db, username, password):
-            # Stocker les informations de l'utilisateur dans la session
-            user = db.userInternet.find_one({"username": username})
-            session["user_id"] = str(user["_id"])
-            session["username"] = user["username"]
-            session["display_name"] = user["displayname"]
-
-            return redirect(url_for("welcome"))
-        else:
-            return render_template("login.html", error="Nom d'utilisateur ou mot de passe incorrect.")
-    return render_template("login.html")
-
-
-@app.route("/logout")
-def logout():
-    session.pop("user_id", None)  # Efface uniquement les clés d'admi
-    return redirect(url_for("login"))
-
-
-@app.route("/logout_client")
-def logout_client():
-    session.pop("client_user_id", None)  # Efface uniquement les clés de client
-    session.pop("client_id", None)  # Efface toutes les données de session
-    return redirect(url_for("client_login"))
 
 
 @app.route("/welcome")
@@ -440,32 +397,6 @@ def client_dashboard():
         documents=documents,
         floorplans=floorplans
     )
-
-
-@app.route("/client_login", methods=["GET", "POST"])
-def client_login():
-    if request.method == "POST":
-        username = request.form["username"]
-        password = request.form["password"]
-
-        # Vérifier l'utilisateur dans `clientUsers`
-        client_user = db.clientUsers.find_one({"username": username})
-        if client_user and bcrypt.checkpw(password.encode("utf-8"), client_user["password_hash"]):
-            # Mettre à jour la date et l'heure de la dernière connexion
-            db.clientUsers.update_one(
-                {"_id": client_user["_id"]},
-                {"$set": {"lastLogin": datetime.now(ZoneInfo("Europe/Paris"))}}
-            )
-
-            # Stocker les informations dans la session
-            session["client_user_id"] = str(client_user["_id"])  # Stocker l'utilisateur dans la session
-            session["client_id"] = client_user["clientId"]  # Stocker le client lié
-
-            return redirect(url_for("client_dashboard"))
-        else:
-            return render_template("client_login.html", error="Nom d'utilisateur ou mot de passe incorrect.")
-
-    return render_template("client_login.html")
 
 
 @app.route("/create_client_user/<client_id>", methods=["POST"])
