@@ -29,10 +29,10 @@
                             <a href="#" class="nav-link" onclick="loadContent('{{ url_for('user_list') }}')">Voir la liste des utilisateurs</a>
                         </li>
                         <li class="nav-item">
-                            <a href="#" class="nav-link" onclick="loadContent('{{ url_for('create_client_route') }}')">Créer un nouveau client</a>
+                            <a href="#" class="nav-link" onclick="loadContent('{{ url_for('clients.create_client_route') }}')">Créer un nouveau client</a>
                         </li>
                         <li class="nav-item">
-                            <a href="#" class="nav-link" onclick="loadContent('{{ url_for('client_list') }}')">Voir la liste des clients</a>
+                            <a href="#" class="nav-link" onclick="loadContent('{{ url_for('clients.client_list') }}')">Voir la liste des clients</a>
                         </li>
                         <li class="nav-item">
   <a class="nav-link" href="{{ url_for('ingest.quick_ingest') }}">📥 Envoi à la volée (Interventions)</a>
@@ -123,12 +123,12 @@ if (contentToLoad === "user_list") {
 } else if (contentToLoad === "create_user") {
     loadContent('{{ url_for('create_user_route') }}');
 } else if (contentToLoad === "client_list") {
-    loadContent(`{{ url_for('client_list') }}?page=${page}&search=${searchQuery}&filter=${filterOption}`);
+    loadContent(`{{ url_for('clients.client_list') }}?page=${page}&search=${searchQuery}&filter=${filterOption}`);
 } else if (contentToLoad === "create_client") {
-    loadContent('{{ url_for('create_client_route') }}');
+    loadContent('{{ url_for('clients.create_client_route') }}');
 } else if (contentToLoad.startsWith("edit_client_route=")) {
     const clientId = contentToLoad.split("=")[1];
-    loadContent(`{{ url_for('edit_client_route', client_id='') }}${clientId}`);
+    loadContent(`{{ url_for('clients.edit_client_route', client_id='') }}${clientId}`);
 }
     </script>
 

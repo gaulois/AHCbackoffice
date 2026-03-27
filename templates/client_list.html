@@ -52,7 +52,7 @@
                     <td>{{ client.contractNumber if client.contractNumber else "N/A" }}</td>
                     <td>{{ client.entity if client.entity else "N/A" }}</td>
                     <td>
-                        <button class="btn btn-primary btn-sm" onclick="loadContent('{{ url_for('edit_client_route', client_id=client._id) }}')">Éditer</button>
+                        <button class="btn btn-primary btn-sm" onclick="loadContent('{{ url_for('clients.edit_client_route', client_id=client._id) }}')">Éditer</button>
                     </td>
                 </tr>
                 {% endfor %}
