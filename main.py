@@ -239,6 +239,41 @@ def view_document(document_id):
         return f"Erreur lors de l'accès au document : {e}", 500
 
 
+@app.route("/delete_document/<document_id>", methods=["POST"])
+def delete_document(document_id):
+    """Supprime un document (MinIO + MongoDB) et retourne du JSON."""
+    client_doc_manager = ClientDocumentManager(db)
+    try:
+        client_doc_manager.delete_document(document_id)
+        return jsonify({"success": True})
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"error": f"Erreur inattendue : {e}"}), 500
+
+
+@app.route("/download_document/<document_id>", methods=["GET"])
+def download_document(document_id):
+    """Génère une URL presignée avec Content-Disposition attachment et redirige."""
+    client_doc_manager = ClientDocumentManager(db)
+    try:
+        document = client_doc_manager.get_document_by_id(document_id)
+        file_path = document.get("filePath")
+        file_name = document.get("fileName", "document")
+        presigned_url = client_doc_manager.minio_client.get_presigned_url(
+            "GET",
+            bucket_name=client_doc_manager.bucket_name,
+            object_name=file_path,
+            expires=timedelta(minutes=10),
+            response_headers={
+                "response-content-disposition": f'attachment; filename="{file_name}"'
+            },
+        )
+        return redirect(presigned_url)
+    except Exception as e:
+        return f"Erreur lors du téléchargement : {e}", 500
+
+
 @app.route("/upload_page/<client_id>", methods=["GET"])
 def upload_page(client_id):
     """

@@ -1,4 +1,38 @@
-<h4>Ajouter un Document</h4>
+<style>
+    #doc-delete-feedback { display: none; font-size: 0.85rem; margin-top: 10px; }
+
+    .doc-badge {
+        font-size: 0.75rem;
+        font-weight: 600;
+        border-radius: 999px;
+        padding: 3px 9px;
+    }
+    .badge-intervention { background: #c30928; color: white; }
+    .badge-facture      { background: #198754; color: white; }
+    .badge-contrat      { background: #f59e0b; color: white; }
+    .badge-autre        { background: #6b7280; color: white; }
+
+    .doc-row {
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 12px 16px;
+        margin-bottom: 8px;
+        background: white;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .doc-info { flex: 1; min-width: 0; }
+    .doc-name { font-weight: 600; color: #111827; font-size: 0.9rem; word-break: break-all; }
+    .doc-meta { color: #6b7280; font-size: 0.8rem; margin-top: 2px; }
+    .doc-actions { display: flex; gap: 6px; flex-shrink: 0; }
+</style>
+
+<h5 class="mb-3">Ajouter un Document</h5>
+
 <div class="mb-3">
     <label for="documentFile" class="form-label">Sélectionnez un fichier</label>
     <input type="file" id="documentFile" name="documentFile" class="form-control">
@@ -12,18 +46,83 @@
         <option value="autre">Autre</option>
     </select>
 </div>
-<button type="submit" formaction="{{ url_for('upload_document', client_id=client['_id']) }}" class="btn btn-primary">Uploader</button>
+<button type="submit" formaction="{{ url_for('upload_document', client_id=client['_id']) }}" class="btn btn-primary btn-sm">Uploader</button>
 
-<h4 class="mt-5">Documents Associés</h4>
-<ul class="list-group">
+<h5 class="mt-5 mb-3">Documents Associés</h5>
+
+<div id="doc-delete-feedback" class="alert" role="alert"></div>
+
+<div id="doc-list">
+{% if documents %}
     {% for document in documents %}
-    <li class="list-group-item d-flex justify-content-between align-items-center">
-        <div>
-            <strong>Type :</strong> {{ document.documentType }}
-            <br>
-            <strong>Nom :</strong> {{ document.fileName }}
+    {% set dtype = document.documentType if document.documentType else 'autre' %}
+    <div class="doc-row" id="doc-row-{{ document._id }}">
+        <div class="doc-info">
+            <div class="doc-name">
+                {% if dtype == 'intervention' %}
+                    <span class="doc-badge badge-intervention">Intervention</span>
+                {% elif dtype == 'facture' %}
+                    <span class="doc-badge badge-facture">Facture</span>
+                {% elif dtype == 'contrat' %}
+                    <span class="doc-badge badge-contrat">Contrat</span>
+                {% else %}
+                    <span class="doc-badge badge-autre">{{ dtype }}</span>
+                {% endif %}
+                {{ document.fileName }}
+            </div>
+            <div class="doc-meta">
+                {% if document.uploadDate %}
+                    Ajouté le {{ document.uploadDate.strftime('%d/%m/%Y') if document.uploadDate.strftime else document.uploadDate }}
+                {% endif %}
+                {% if document.fileSize %}
+                    · {{ (document.fileSize / 1024) | round(1) }} Ko
+                {% endif %}
+            </div>
         </div>
-        <a href="{{ document.fileUrl }}" target="_blank" class="btn btn-sm btn-secondary">Voir</a>
-    </li>
+        <div class="doc-actions">
+            {% if document.fileUrl %}
+                <a href="{{ document.fileUrl }}" target="_blank" class="btn btn-outline-secondary btn-sm">Voir</a>
+                <a href="{{ url_for('download_document', document_id=document._id) }}" class="btn btn-outline-primary btn-sm">Télécharger</a>
+            {% endif %}
+            <button type="button"
+                    class="btn btn-outline-danger btn-sm"
+                    onclick="deleteDocument('{{ document._id }}', '{{ client['_id'] }}')">
+                Supprimer
+            </button>
+        </div>
+    </div>
     {% endfor %}
-</ul>
+{% else %}
+    <p class="text-muted">Aucun document associé à ce client.</p>
+{% endif %}
+</div>
+
+<script>
+(function () {
+    const feedback = document.getElementById('doc-delete-feedback');
+
+    function showFeedback(type, message) {
+        feedback.className = 'alert alert-' + type;
+        feedback.textContent = message;
+        feedback.style.display = 'block';
+        setTimeout(() => { feedback.style.display = 'none'; }, 4000);
+    }
+
+    window.deleteDocument = function (documentId, clientId) {
+        if (!confirm('Supprimer ce document définitivement ?')) return;
+
+        fetch('/delete_document/' + documentId, { method: 'POST' })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    const row = document.getElementById('doc-row-' + documentId);
+                    if (row) row.remove();
+                    showFeedback('success', 'Document supprimé.');
+                } else {
+                    showFeedback('danger', data.error || 'Erreur lors de la suppression.');
+                }
+            })
+            .catch(() => showFeedback('danger', 'Erreur réseau. Veuillez réessayer.'));
+    };
+})();
+</script>
