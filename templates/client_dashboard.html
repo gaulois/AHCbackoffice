@@ -312,7 +312,7 @@
                             )
                         }}
                     </div>
-                    <div class="mini-muted">Documents d’intervention</div>
+                    <div class="mini-muted">Documents d'intervention</div>
                 </div>
             </div>
         </div>
@@ -381,11 +381,19 @@
                     </div>
 
                     {% if documents %}
-                        <div class="d-flex flex-column gap-3">
+                        <!-- Filtres par type -->
+                        <div class="d-flex flex-wrap gap-2 mb-4" id="doc-filters">
+                            <button class="btn btn-sm btn-primary doc-filter-btn active" data-filter="intervention">Interventions</button>
+                            <button class="btn btn-sm btn-outline-secondary doc-filter-btn" data-filter="facture">Factures</button>
+                            <button class="btn btn-sm btn-outline-secondary doc-filter-btn" data-filter="contrat">Contrats</button>
+                            <button class="btn btn-sm btn-outline-secondary doc-filter-btn" data-filter="autre">Autres</button>
+                        </div>
+
+                        <div class="d-flex flex-column gap-3" id="doc-list">
                             {% for document in documents %}
                                 {% set current_type = document.documentType if document.documentType is defined and document.documentType else (document.docType if document.docType is defined else 'autre') %}
 
-                                <div class="document-row p-3">
+                                <div class="document-row p-3" data-doc-type="{{ current_type }}">
                                     <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start gap-3">
                                         <div class="flex-grow-1">
                                             <div class="d-flex align-items-center gap-2 flex-wrap mb-2">
@@ -394,18 +402,19 @@
                                                 </span>
 
                                                 {% if current_type == "intervention" %}
-    <span class="badge doc-badge badge-intervention">Intervention</span>
-{% elif current_type == "facture" %}
-    <span class="badge doc-badge badge-facture">Facture</span>
-{% elif current_type == "contrat" %}
-    <span class="badge doc-badge badge-contrat">Contrat</span>
-{% else %}
-    <span class="badge doc-badge badge-autre">{{ current_type }}</span>
-{% endif %}
+                                                    <span class="badge doc-badge badge-intervention">Intervention</span>
+                                                {% elif current_type == "facture" %}
+                                                    <span class="badge doc-badge badge-facture">Facture</span>
+                                                {% elif current_type == "contrat" %}
+                                                    <span class="badge doc-badge badge-contrat">Contrat</span>
+                                                {% else %}
+                                                    <span class="badge doc-badge badge-autre">{{ current_type }}</span>
+                                                {% endif %}
+                                            </div>
+
                                             <div class="doc-meta">
                                                 {% if document.uploadDate %}
-                                                    Ajouté le :
-                                                    {{ document.uploadDate.strftime('%d/%m/%Y') if document.uploadDate.strftime else document.uploadDate }}
+                                                    Ajouté le {{ document.uploadDate.strftime('%d/%m/%Y') if document.uploadDate.strftime else document.uploadDate }}
                                                 {% else %}
                                                     Date non disponible
                                                 {% endif %}
@@ -413,7 +422,7 @@
 
                                             {% if document.interventionDate %}
                                                 <div class="doc-meta">
-                                                    Date d’intervention : {{ document.interventionDate }}
+                                                    Date d'intervention : {{ document.interventionDate }}
                                                 </div>
                                             {% endif %}
                                         </div>
@@ -434,9 +443,40 @@
                                 </div>
                             {% endfor %}
                         </div>
+
+                        <script>
+                        (function () {
+                            const filterBtns = document.querySelectorAll('.doc-filter-btn');
+                            const docRows   = document.querySelectorAll('#doc-list [data-doc-type]');
+
+                            filterBtns.forEach(function (btn) {
+                                btn.addEventListener('click', function () {
+                                    const filter = btn.dataset.filter;
+
+                                    filterBtns.forEach(function (b) {
+                                        b.classList.remove('active', 'btn-primary');
+                                        b.classList.add('btn-outline-secondary');
+                                    });
+                                    btn.classList.add('active', 'btn-primary');
+                                    btn.classList.remove('btn-outline-secondary');
+
+                                    docRows.forEach(function (row) {
+                                        const type = row.dataset.docType;
+                                        const known = ['intervention', 'facture', 'contrat'];
+                                        const normalized = known.includes(type) ? type : 'autre';
+                                        const visible = filter === 'tous' || normalized === filter;
+                                        row.style.display = visible ? '' : 'none';
+                                    });
+                                });
+                            });
+                            // Filtre actif par défaut au chargement
+                            document.querySelector('.doc-filter-btn[data-filter="intervention"]').click();
+                        })();
+                        </script>
+
                     {% else %}
                         <div class="preview-box">
-                            Aucun document n’est actuellement disponible dans votre espace client.
+                            Aucun document n'est actuellement disponible dans votre espace client.
                         </div>
                     {% endif %}
                 </div>
@@ -498,7 +538,7 @@
                         </div>
                     {% else %}
                         <div class="preview-box">
-                            Aucun plan n’est actuellement disponible.
+                            Aucun plan n'est actuellement disponible.
                         </div>
                     {% endif %}
                 </div>
@@ -528,7 +568,7 @@
                         <div class="col-12 col-lg-6">
                             <div class="card border-0 bg-light h-100">
                                 <div class="card-body">
-                                    <h6 class="fw-bold mb-3">Adresse d’intervention</h6>
+                                    <h6 class="fw-bold mb-3">Adresse d'intervention</h6>
 
                                     {% if client.serviceAddress %}
                                         <p class="mb-2">
@@ -548,7 +588,7 @@
                                             {{ client.serviceAddress.city if client.serviceAddress.city else "-" }}
                                         </p>
                                     {% else %}
-                                        <p class="mb-0">Aucune information d’adresse disponible.</p>
+                                        <p class="mb-0">Aucune information d'adresse disponible.</p>
                                     {% endif %}
                                 </div>
                             </div>
