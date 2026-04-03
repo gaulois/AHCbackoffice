@@ -54,6 +54,9 @@ else:
 client = MongoClient(mongo_uri)
 db = client[mongo_database]
 app.config['MONGO_DB'] = db
+
+# Index unique sur le username des utilisateurs client (idempotent)
+db.clientUsers.create_index([("username", 1)], unique=True, name="username_unique")
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # Limite à 16 Mo
 # Vérification de l'existence de la collection et création d'un admin si nécessaire
 if "userInternet" not in db.list_collection_names():
@@ -325,13 +328,13 @@ def client_dashboard():
 def create_client_user(client_id):
     """
     Route pour créer un utilisateur pour un client donné.
+    Retourne du JSON pour permettre un retour d'erreur inline dans l'onglet.
     """
     try:
-        # Passe l'utilisateur connecté comme créateur
         create_client_user_c(db, client_id, request.form, session["username"])
-        return redirect(url_for("welcome", load=f"edit_client_route={client_id}"))
+        return jsonify({"success": True, "redirect": url_for("welcome", load=f"edit_client_route={client_id}")})
     except ValueError as e:
-        return f"Erreur : {e}", 400
+        return jsonify({"error": str(e)}), 400
 
 
 import re  # Import pour utiliser les expressions régulières

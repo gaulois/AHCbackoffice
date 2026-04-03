@@ -7,9 +7,99 @@
     <!-- Lien vers Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
+        body {
+            background: #f4f7fb;
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            color: #1f2937;
+        }
+
         .sidebar {
             min-height: 100vh;
-            background-color: #f8f9fa;
+            background-color: #ffffff;
+            border-right: 1px solid #e5e7eb;
+            box-shadow: 2px 0 8px rgba(17, 24, 39, 0.05);
+        }
+
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 8px 20px 8px;
+            border-bottom: 1px solid #f0f0f0;
+            margin-bottom: 10px;
+        }
+
+        .sidebar-brand img {
+            width: 36px;
+            height: 36px;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+
+        .sidebar-brand-text {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #111827;
+            line-height: 1.2;
+        }
+
+        .sidebar-brand-sub {
+            font-size: 0.75rem;
+            color: #6b7280;
+            font-weight: 400;
+        }
+
+        .sidebar .nav-link {
+            color: #374151;
+            border-radius: 8px;
+            padding: 9px 12px;
+            font-size: 0.9rem;
+            transition: background 0.15s, color 0.15s;
+            margin-bottom: 2px;
+        }
+
+        .sidebar .nav-link:hover {
+            background: #fef2f2;
+            color: #c30928;
+        }
+
+        .sidebar .nav-link.active-link {
+            background: #fef2f2;
+            color: #c30928;
+            font-weight: 600;
+        }
+
+        .sidebar .nav-link.logout-link {
+            color: #6b7280;
+            margin-top: 12px;
+            border-top: 1px solid #f0f0f0;
+            padding-top: 14px;
+        }
+
+        .sidebar .nav-link.logout-link:hover {
+            color: #c30928;
+            background: #fef2f2;
+        }
+
+        .welcome-card {
+            background: white;
+            border-radius: 18px;
+            box-shadow: 0 6px 22px rgba(17, 24, 39, 0.06);
+            border: none;
+            padding: 48px 32px;
+            text-align: center;
+        }
+
+        .welcome-card h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 10px;
+        }
+
+        .welcome-card p {
+            color: #6b7280;
+            font-size: 0.95rem;
         }
     </style>
 </head>
@@ -19,42 +109,48 @@
         <div class="row">
             <!-- Sidebar (Navigation Bar) -->
             <nav class="col-md-3 col-lg-2 d-md-block sidebar">
-                <div class="position-sticky pt-3">
-                    <h4 class="text-center">Menu</h4>
+                <div class="position-sticky pt-3 px-2">
+                    <div class="sidebar-brand">
+                        <img src="https://all-hygiene-company.be/wp-content/uploads/2022/06/logo-ahc.png" alt="AHC">
+                        <div>
+                            <div class="sidebar-brand-text">AHC</div>
+                            <div class="sidebar-brand-sub">BackOffice</div>
+                        </div>
+                    </div>
                     <ul class="nav flex-column">
                         <li class="nav-item">
-                            <a href="#" class="nav-link" onclick="loadContent('{{ url_for('create_user_route') }}')">Créer un nouvel utilisateur</a>
+                            <a href="#" class="nav-link" onclick="loadContent('{{ url_for('create_user_route') }}')">👤 Créer un utilisateur</a>
                         </li>
                         <li class="nav-item">
-                            <a href="#" class="nav-link" onclick="loadContent('{{ url_for('user_list') }}')">Voir la liste des utilisateurs</a>
+                            <a href="#" class="nav-link" onclick="loadContent('{{ url_for('user_list') }}')">📋 Liste des utilisateurs</a>
                         </li>
                         <li class="nav-item">
-                            <a href="#" class="nav-link" onclick="loadContent('{{ url_for('clients.create_client_route') }}')">Créer un nouveau client</a>
+                            <a href="#" class="nav-link" onclick="loadContent('{{ url_for('clients.create_client_route') }}')">➕ Créer un client</a>
                         </li>
                         <li class="nav-item">
-                            <a href="#" class="nav-link" onclick="loadContent('{{ url_for('clients.client_list') }}')">Voir la liste des clients</a>
+                            <a href="#" class="nav-link" onclick="loadContent('{{ url_for('clients.client_list') }}')">🏢 Liste des clients</a>
                         </li>
                         <li class="nav-item">
-  <a href="#" class="nav-link" onclick="loadContent('{{ url_for('ingest.quick_ingest') }}')">📥 Envoi à la volée (Interventions)</a>
-</li>
-                        <li class="nav-item">
-                            <a href="#" class="nav-link" onclick="clearContent()">Retour à l'accueil</a>
+                            <a href="#" class="nav-link" onclick="loadContent('{{ url_for('ingest.quick_ingest') }}')">📥 Envoi à la volée (Interventions)</a>
                         </li>
-                         <li class="nav-item">
-                            <a href="/logout" class="nav-link" onclick="clearContent()">Logout</a>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" onclick="clearContent()">🏠 Accueil</a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/logout" class="nav-link logout-link">⎋ Déconnexion</a>
                         </li>
                     </ul>
                 </div>
             </nav>
 
             <!-- Contenu principal qui sera remplacé dynamiquement -->
-            <main class="col-md-9 col-lg-10 ms-sm-auto px-md-4">
+            <main class="col-md-9 col-lg-10 ms-sm-auto px-md-4 py-4">
                 <div id="content-container">
                     <!-- Contenu par défaut de bienvenue -->
-                    <div class="d-flex justify-content-center align-items-center mt-5">
-                        <h1 class="text-center">{{message}} dans l'application </h1>
+                    <div class="welcome-card mt-3">
+                        <h1>{{message}} dans l'application</h1>
+                        <p>Utilisez le menu à gauche pour naviguer dans l'application.</p>
                     </div>
-                    <p class="text-center">Utilisez le menu à gauche pour naviguer dans l'application.</p>
                 </div>
             </main>
         </div>
@@ -87,12 +183,22 @@
         }
     }
 
+        function executeScripts(container) {
+            container.querySelectorAll('script').forEach(function(old) {
+                const s = document.createElement('script');
+                s.textContent = old.textContent;
+                old.replaceWith(s);
+            });
+        }
+
         function loadContent(url) {
     document.getElementById('content-container').innerHTML = ''; // Efface le contenu actuel
     fetch(url)
         .then(response => response.text())
         .then(data => {
-            document.getElementById('content-container').innerHTML = data;
+            const container = document.getElementById('content-container');
+            container.innerHTML = data;
+            executeScripts(container);
 
             // 🔥 Déclencher un événement quand une page est chargée dynamiquement
             const event = new CustomEvent("welcomeContentLoaded", { detail: url });
@@ -104,10 +210,10 @@
         // Fonction pour effacer le contenu et afficher l'accueil
         function clearContent() {
             document.getElementById('content-container').innerHTML = `
-                <div class="d-flex justify-content-center align-items-center mt-5">
-                    <h1 class="text-center">Bienvenue dans l'application</h1>
+                <div class="welcome-card mt-3">
+                    <h1>Bienvenue dans l'application</h1>
+                    <p>Utilisez le menu à gauche pour naviguer dans l'application.</p>
                 </div>
-                <p class="text-center">Utilisez le menu à gauche pour naviguer dans l'application.</p>
             `;
         }
 

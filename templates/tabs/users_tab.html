@@ -1,20 +1,157 @@
-<h4>Créer un utilisateur pour ce client</h4>
+<style>
+    .rule { font-size: 0.83rem; color: #9ca3af; margin-bottom: 2px; }
+    .rule.ok { color: #16a34a; }
+    .rule.fail { color: #dc2626; }
+    #user-feedback { display: none; font-size: 0.88rem; margin-top: 10px; }
+</style>
+
+<h5 class="mb-3">Créer un utilisateur pour ce client</h5>
+
+<div id="user-feedback" class="alert" role="alert"></div>
+
 <div class="mb-3">
     <label for="username" class="form-label">Nom d'utilisateur</label>
-    <input type="text" id="username" name="username" class="form-control">
+    <input type="text" id="username" name="username" class="form-control" autocomplete="off">
 </div>
-<div class="mb-3">
-    <label for="password" class="form-label">Mot de passe</label>
-    <input type="password" id="password" name="password" class="form-control">
-</div>
-<button type="submit" formaction="{{ url_for('create_client_user', client_id=client['_id']) }}" class="btn btn-primary">Créer l'utilisateur</button>
 
-<h4 class="mt-5">Liste des utilisateurs</h4>
+<div class="mb-1">
+    <label for="password" class="form-label">Mot de passe</label>
+    <div class="input-group">
+        <input type="password" id="password" name="password" class="form-control" autocomplete="new-password">
+        <button type="button" class="btn btn-outline-secondary btn-sm" id="togglePassword" title="Afficher/masquer">👁</button>
+        <button type="button" class="btn btn-outline-secondary btn-sm" id="generatePassword" title="Générer un mot de passe">🎲 Générer</button>
+    </div>
+</div>
+
+<div class="mb-3 ps-1">
+    <div class="rule" id="rule-length">✗ 12 caractères minimum</div>
+    <div class="rule" id="rule-upper">✗ Une majuscule</div>
+    <div class="rule" id="rule-lower">✗ Une minuscule</div>
+    <div class="rule" id="rule-digit">✗ Un chiffre</div>
+    <div class="rule" id="rule-special">✗ Un caractère spécial</div>
+</div>
+
+<button type="button" class="btn btn-primary btn-sm" id="createUserBtn">Créer l'utilisateur</button>
+
+<h5 class="mt-5 mb-3">Liste des utilisateurs</h5>
 <ul class="list-group">
     {% for user in client_users %}
     <li class="list-group-item d-flex justify-content-between align-items-center">
-        {{ user.username }}
-        <span>Dernière connexion : {{ user.lastLogin.strftime('%d/%m/%Y %H:%M:%S') if user.lastLogin else "Jamais" }}</span>
+        <span>{{ user.username }}</span>
+        <span class="text-muted" style="font-size:0.85rem;">Dernière connexion : {{ user.lastLogin.strftime('%d/%m/%Y %H:%M') if user.lastLogin else "Jamais" }}</span>
     </li>
     {% endfor %}
+    {% if not client_users %}
+    <li class="list-group-item text-muted">Aucun utilisateur créé.</li>
+    {% endif %}
 </ul>
+
+<script>
+(function () {
+    const clientId = "{{ client['_id'] }}";
+    const createUrl = "/create_client_user/" + clientId;
+
+    const usernameInput = document.getElementById("username");
+    const passwordInput = document.getElementById("password");
+    const toggleBtn    = document.getElementById("togglePassword");
+    const generateBtn  = document.getElementById("generatePassword");
+    const createBtn    = document.getElementById("createUserBtn");
+    const feedback     = document.getElementById("user-feedback");
+
+    const rules = {
+        length:  { el: document.getElementById("rule-length"),  test: p => p.length >= 12 },
+        upper:   { el: document.getElementById("rule-upper"),   test: p => /[A-Z]/.test(p) },
+        lower:   { el: document.getElementById("rule-lower"),   test: p => /[a-z]/.test(p) },
+        digit:   { el: document.getElementById("rule-digit"),   test: p => /\d/.test(p) },
+        special: { el: document.getElementById("rule-special"), test: p => /[^A-Za-z0-9]/.test(p) },
+    };
+
+    function updateRules(password) {
+        let allOk = true;
+        for (const key in rules) {
+            const ok = rules[key].test(password);
+            rules[key].el.classList.toggle("ok", ok);
+            rules[key].el.classList.toggle("fail", !ok && password.length > 0);
+            rules[key].el.textContent = (ok ? "✓" : "✗") + " " + rules[key].el.textContent.slice(2);
+            if (!ok) allOk = false;
+        }
+        return allOk;
+    }
+
+    passwordInput.addEventListener("input", () => updateRules(passwordInput.value));
+
+    toggleBtn.addEventListener("click", () => {
+        passwordInput.type = passwordInput.type === "password" ? "text" : "password";
+    });
+
+    generateBtn.addEventListener("click", () => {
+        const upper   = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+        const lower   = "abcdefghjkmnpqrstuvwxyz";
+        const digits  = "23456789";
+        const special = "!@#%&*+-=?";
+        const all     = upper + lower + digits + special;
+        const rand    = (str) => str[Math.floor(Math.random() * str.length)];
+
+        // Garantit au moins 1 de chaque catégorie
+        let pwd = rand(upper) + rand(lower) + rand(digits) + rand(special);
+        for (let i = pwd.length; i < 14; i++) pwd += rand(all);
+
+        // Mélange
+        pwd = pwd.split("").sort(() => Math.random() - 0.5).join("");
+        passwordInput.value = pwd;
+        passwordInput.type = "text";
+        updateRules(pwd);
+    });
+
+    function showFeedback(type, message) {
+        feedback.className = "alert alert-" + type;
+        feedback.textContent = message;
+        feedback.style.display = "block";
+    }
+
+    createBtn.addEventListener("click", () => {
+        const username = usernameInput.value.trim();
+        const password = passwordInput.value;
+
+        if (!username) {
+            showFeedback("warning", "Veuillez saisir un nom d'utilisateur.");
+            return;
+        }
+        if (!updateRules(password)) {
+            showFeedback("warning", "Le mot de passe ne respecte pas tous les critères.");
+            return;
+        }
+
+        createBtn.disabled = true;
+        createBtn.textContent = "Création…";
+
+        const formData = new FormData();
+        formData.append("username", username);
+        formData.append("password", password);
+
+        fetch(createUrl, { method: "POST", body: formData })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    showFeedback("success", "Utilisateur créé avec succès.");
+                    setTimeout(() => {
+                        if (typeof loadContent === "function") {
+                            loadContent("/edit_client/" + clientId);
+                        } else {
+                            window.location.href = data.redirect;
+                        }
+                    }, 800);
+                } else {
+                    showFeedback("danger", data.error || "Erreur lors de la création.");
+                    createBtn.disabled = false;
+                    createBtn.textContent = "Créer l'utilisateur";
+                }
+            })
+            .catch(() => {
+                showFeedback("danger", "Erreur réseau. Veuillez réessayer.");
+                createBtn.disabled = false;
+                createBtn.textContent = "Créer l'utilisateur";
+            });
+    });
+})();
+</script>

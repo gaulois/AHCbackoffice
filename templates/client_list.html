@@ -4,63 +4,191 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>Liste des Clients</title>
-    <!-- Lien vers Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: #f4f7fb;
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            color: #1f2937;
+        }
+
+        .list-card {
+            background: white;
+            border-radius: 14px;
+            box-shadow: 0 4px 16px rgba(17, 24, 39, 0.06);
+            padding: 24px;
+        }
+
+        .page-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .result-count {
+            font-size: 0.88rem;
+            color: #6b7280;
+        }
+
+        .table thead th {
+            background: #f8fafc;
+            color: #6b7280;
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 10px 12px;
+        }
+
+        .table tbody td {
+            padding: 12px 12px;
+            vertical-align: middle;
+            border-bottom: 1px solid #f3f4f6;
+            font-size: 0.9rem;
+        }
+
+        .table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .table tbody tr:hover td {
+            background: #fef9fa;
+        }
+
+        .company-name {
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .text-na {
+            color: #d1d5db;
+            font-size: 0.85rem;
+        }
+
+        .btn-edit {
+            background-color: #c30928;
+            border-color: #c30928;
+            color: white;
+            font-size: 0.82rem;
+            padding: 5px 14px;
+            border-radius: 6px;
+        }
+
+        .btn-edit:hover {
+            background-color: #a50722;
+            border-color: #a50722;
+            color: white;
+        }
+
+        .btn-search {
+            background-color: #c30928;
+            border-color: #c30928;
+            color: white;
+        }
+
+        .btn-search:hover {
+            background-color: #a50722;
+            border-color: #a50722;
+            color: white;
+        }
+
+        .pagination .page-link {
+            color: #c30928;
+            border-color: #e5e7eb;
+            font-size: 0.88rem;
+        }
+
+        .pagination .page-item.active .page-link {
+            background-color: #c30928;
+            border-color: #c30928;
+            color: white;
+        }
+
+        .pagination .page-item.disabled .page-link {
+            color: #d1d5db;
+        }
+    </style>
 </head>
 <body>
-    <div class="container mt-5">
-        <h2 class="text-center">Liste des Clients</h2>
+    <div class="container-fluid px-4 py-4">
 
-      <form method="GET" action="?load=client_list" class="mb-4">
-    <input type="hidden" name="load" value="client_list">
-    <input type="hidden" name="page" value="1"> <!-- Page par défaut -->
-    <div class="row">
-        <div class="col-md-4">
-            <input type="text" name="search" class="form-control" placeholder="Rechercher un client..." value="{{ request.args.get('search', '') }}">
+        <div class="d-flex justify-content-between align-items-baseline mb-3">
+            <div class="page-title">Liste des Clients</div>
+            <div class="result-count">{{ clients|length }} client(s) affiché(s)</div>
         </div>
-        <div class="col-md-4">
-            <select name="filter" class="form-control">
-                <option value="" {% if not request.args.get('filter') %}selected{% endif %}>Tous</option>
-                <option value="with_docs" {% if request.args.get('filter') == 'with_docs' %}selected{% endif %}>Avec documents</option>
-                <option value="without_docs" {% if request.args.get('filter') == 'without_docs' %}selected{% endif %}>Sans documents</option>
-            </select>
-        </div>
-        <div class="col-md-4">
-            <button type="submit" class="btn btn-primary">Appliquer</button>
-        </div>
-    </div>
-</form>
+
+        <!-- Recherche et filtre -->
+        <form method="GET" action="?load=client_list" class="mb-4">
+            <input type="hidden" name="load" value="client_list">
+            <input type="hidden" name="page" value="1">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-4">
+                    <input type="text" name="search" class="form-control" placeholder="Rechercher un client..." value="{{ request.args.get('search', '') }}">
+                </div>
+                <div class="col-md-4">
+                    <select name="filter" class="form-select">
+                        <option value="" {% if not request.args.get('filter') %}selected{% endif %}>Tous</option>
+                        <option value="with_docs" {% if request.args.get('filter') == 'with_docs' %}selected{% endif %}>Avec documents</option>
+                        <option value="without_docs" {% if request.args.get('filter') == 'without_docs' %}selected{% endif %}>Sans documents</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-search w-100">Appliquer</button>
+                </div>
+            </div>
+        </form>
 
         <!-- Tableau des clients -->
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Nom de l'entreprise</th>
-                    <th>Email</th>
-                    <th>Lieu de Traitement</th>
-                    <th>N° Contrat</th>
-                    <th>Entité</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for client in clients %}
-                <tr>
-                    <td>{{ client.companyName }}</td>
-                    <td>{{ client.email }}</td>
-                    <td>{{ client.serviceAddress.treatmentPlaceName if client.serviceAddress.treatmentPlaceName else "N/A" }}</td>
-                    <td>{{ client.contractNumber if client.contractNumber else "N/A" }}</td>
-                    <td>{{ client.entity if client.entity else "N/A" }}</td>
-                    <td>
-                        <button class="btn btn-primary btn-sm" onclick="loadContent('{{ url_for('clients.edit_client_route', client_id=client._id) }}')">Éditer</button>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="list-card">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Nom de l'entreprise</th>
+                        <th>Email</th>
+                        <th>Lieu de Traitement</th>
+                        <th>N° Contrat</th>
+                        <th>Entité</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for client in clients %}
+                    <tr>
+                        <td><span class="company-name">{{ client.companyName }}</span></td>
+                        <td>{{ client.email }}</td>
+                        <td>
+                            {% if client.serviceAddress.treatmentPlaceName %}
+                                {{ client.serviceAddress.treatmentPlaceName }}
+                            {% else %}
+                                <span class="text-na">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if client.contractNumber %}
+                                {{ client.contractNumber }}
+                            {% else %}
+                                <span class="text-na">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if client.entity %}
+                                {{ client.entity }}
+                            {% else %}
+                                <span class="text-na">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <button class="btn btn-edit btn-sm" onclick="loadContent('{{ url_for('clients.edit_client_route', client_id=client._id) }}')">Éditer</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
 
         <!-- Pagination -->
-        <nav aria-label="Pagination">
+        <nav aria-label="Pagination" class="mt-4">
             <ul class="pagination justify-content-center">
                 {% if page > 1 %}
                 <li class="page-item">
@@ -97,9 +225,9 @@
                 {% endif %}
             </ul>
         </nav>
+
     </div>
 
-    <!-- Lien vers Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>

@@ -5,7 +5,25 @@ from models.ClientDocumentManager import ClientDocumentManager
 from bson.objectid import ObjectId
 from datetime import datetime
 import bcrypt
+import re
 from models.floorplan_model import FloorPlanModel
+
+
+def _validate_password_strength(password):
+    """Valide les critères de sécurité du mot de passe. Lève ValueError si non conforme."""
+    errors = []
+    if len(password) < 12:
+        errors.append("au moins 12 caractères")
+    if not re.search(r'[A-Z]', password):
+        errors.append("au moins une majuscule")
+    if not re.search(r'[a-z]', password):
+        errors.append("au moins une minuscule")
+    if not re.search(r'\d', password):
+        errors.append("au moins un chiffre")
+    if not re.search(r'[^A-Za-z0-9]', password):
+        errors.append("au moins un caractère spécial")
+    if errors:
+        raise ValueError("Mot de passe insuffisant : " + ", ".join(errors) + ".")
 
 def create_client(db, form_data, username):
     """
@@ -107,6 +125,9 @@ def create_client_user_c(db, client_id, form_data, created_by):
     existing_user = db.clientUsers.find_one({"username": username})
     if existing_user:
         raise ValueError("Nom d'utilisateur déjà utilisé.")
+
+    # Valide la force du mot de passe
+    _validate_password_strength(password)
 
     # Hash du mot de passe
     password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
