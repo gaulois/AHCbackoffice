@@ -60,6 +60,8 @@ def client_login():
 
         client_user = db.clientUsers.find_one({"username": username})
         if client_user and bcrypt.checkpw(password.encode("utf-8"), client_user["password_hash"]):
+            if not client_user.get("isActive", True):
+                return render_template("client_login.html", error="Ce compte est désactivé. Veuillez contacter votre administrateur.")
             db.clientUsers.update_one(
                 {"_id": client_user["_id"]},
                 {"$set": {"lastLogin": datetime.now(ZoneInfo("Europe/Paris"))}}

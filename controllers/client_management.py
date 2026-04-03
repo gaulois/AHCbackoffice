@@ -138,9 +138,10 @@ def create_client_user_c(db, client_id, form_data, created_by):
         "username": username,
         "password_hash": password_hash,
         "displayName": client["companyName"],
-        "createdBy": created_by,  # Ajout du créateur
+        "createdBy": created_by,
         "createdDate": datetime.utcnow(),
         "lastLogin": None,
+        "isActive": True,
     }
 
     db.clientUsers.insert_one(user_data)

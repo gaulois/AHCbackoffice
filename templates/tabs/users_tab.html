@@ -34,11 +34,31 @@
 <button type="button" class="btn btn-primary btn-sm" id="createUserBtn">Créer l'utilisateur</button>
 
 <h5 class="mt-5 mb-3">Liste des utilisateurs</h5>
-<ul class="list-group">
+
+<div id="user-toggle-feedback" class="alert" style="display:none; font-size:0.88rem;" role="alert"></div>
+
+<ul class="list-group" id="client-users-list">
     {% for user in client_users %}
-    <li class="list-group-item d-flex justify-content-between align-items-center">
-        <span>{{ user.username }}</span>
-        <span class="text-muted" style="font-size:0.85rem;">Dernière connexion : {{ user.lastLogin.strftime('%d/%m/%Y %H:%M') if user.lastLogin else "Jamais" }}</span>
+    {% set is_active = user.get('isActive', True) if user.isActive is defined else True %}
+    <li class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2"
+        id="user-row-{{ user._id }}">
+        <div>
+            <span class="fw-semibold">{{ user.username }}</span>
+            {% if user.get('isActive', True) %}
+                <span class="badge bg-success ms-2" id="badge-{{ user._id }}">Actif</span>
+            {% else %}
+                <span class="badge bg-secondary ms-2" id="badge-{{ user._id }}">Désactivé</span>
+            {% endif %}
+            <div class="text-muted" style="font-size:0.82rem;">
+                Dernière connexion : {{ user.lastLogin.strftime('%d/%m/%Y %H:%M') if user.lastLogin else "Jamais" }}
+            </div>
+        </div>
+        <button type="button"
+                class="btn btn-sm {% if user.get('isActive', True) %}btn-outline-warning{% else %}btn-outline-success{% endif %}"
+                id="toggle-btn-{{ user._id }}"
+                onclick="toggleUser('{{ user._id }}')">
+            {% if user.get('isActive', True) %}Désactiver{% else %}Réactiver{% endif %}
+        </button>
     </li>
     {% endfor %}
     {% if not client_users %}
@@ -108,6 +128,42 @@
         feedback.textContent = message;
         feedback.style.display = "block";
     }
+
+    window.toggleUser = function (userId) {
+        const toggleFeedback = document.getElementById("user-toggle-feedback");
+        fetch("/toggle_client_user/" + userId, { method: "POST" })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    const badge = document.getElementById("badge-" + userId);
+                    const btn   = document.getElementById("toggle-btn-" + userId);
+                    if (data.isActive) {
+                        badge.textContent = "Actif";
+                        badge.className = "badge bg-success ms-2";
+                        btn.textContent = "Désactiver";
+                        btn.className = "btn btn-sm btn-outline-warning";
+                    } else {
+                        badge.textContent = "Désactivé";
+                        badge.className = "badge bg-secondary ms-2";
+                        btn.textContent = "Réactiver";
+                        btn.className = "btn btn-sm btn-outline-success";
+                    }
+                    toggleFeedback.className = "alert alert-success";
+                    toggleFeedback.textContent = data.isActive ? "Utilisateur réactivé." : "Utilisateur désactivé.";
+                    toggleFeedback.style.display = "block";
+                    setTimeout(() => { toggleFeedback.style.display = "none"; }, 3000);
+                } else {
+                    toggleFeedback.className = "alert alert-danger";
+                    toggleFeedback.textContent = data.error || "Erreur lors de la mise à jour.";
+                    toggleFeedback.style.display = "block";
+                }
+            })
+            .catch(() => {
+                toggleFeedback.className = "alert alert-danger";
+                toggleFeedback.textContent = "Erreur réseau. Veuillez réessayer.";
+                toggleFeedback.style.display = "block";
+            });
+    };
 
     createBtn.addEventListener("click", () => {
         const username = usernameInput.value.trim();

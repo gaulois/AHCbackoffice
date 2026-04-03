@@ -239,6 +239,23 @@ def view_document(document_id):
         return f"Erreur lors de l'accès au document : {e}", 500
 
 
+@app.route("/toggle_client_user/<user_id>", methods=["POST"])
+def toggle_client_user(user_id):
+    """Active ou désactive un utilisateur client. Retourne le nouveau statut en JSON."""
+    try:
+        user = db.clientUsers.find_one({"_id": ObjectId(user_id)})
+        if not user:
+            return jsonify({"error": "Utilisateur introuvable."}), 404
+        new_status = not user.get("isActive", True)
+        db.clientUsers.update_one(
+            {"_id": ObjectId(user_id)},
+            {"$set": {"isActive": new_status}}
+        )
+        return jsonify({"success": True, "isActive": new_status})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/delete_document/<document_id>", methods=["POST"])
 def delete_document(document_id):
     """Supprime un document (MinIO + MongoDB) et retourne du JSON."""
@@ -329,7 +346,7 @@ def list_minio_files():
 def client_dashboard():
     client_id = session.get("client_id")
     if not client_id:
-        return redirect(url_for("client_login"))
+        return redirect(url_for("auth.client_login"))
 
     # Récupérer les informations du client
     client = db.clients.find_one({"_id": ObjectId(client_id)})
